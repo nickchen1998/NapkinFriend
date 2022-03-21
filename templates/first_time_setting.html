@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>第一次使用設定</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+</head>
+<body style="background-color: #F2B3BD">
+    <div class="row" style="margin: 10px">
+        <div class="col-12" style="margin: 10px">
+            <label>姓名</label>
+            <input type="text" id="name" class="form-control" />
+            <br />
+            <label>請輸入最近一次的生理期:</label>
+            <input type="date" id="datetime" value="" class="form-control" />
+            <br />
+            <label>請輸入最近一次的周期 (單位:天):</label>
+            <input type="number" inputmode='decimal' id="cycle" class="form-control" />
+            <br />
+            <label>請輸入 輕薄護墊 剩餘數量 (單位:片):</label>
+            <input type="number" inputmode='decimal' id="Pad" class="form-control" />
+            <br />
+            <label>請輸入 日用量少 剩餘數量 (單位:片):</label>
+            <input type="number" inputmode='decimal' id="Ldailyuse" class="form-control" />
+            <br />
+            <label>請輸入 日用正常 剩餘數量 (單位:片):</label>
+            <input type="number" inputmode='decimal' id="Ndailyuse" class="form-control" />
+            <br />
+            <label>請輸入 日用量多 剩餘數量 (單位:片):</label>
+            <input type="number" inputmode='decimal' id="Hdailyuse" class="form-control" />
+            <br />
+            <label>請輸入 夜用正常 剩餘數量 (單位:片):</label>
+            <input type="number" inputmode='decimal' id="Nnightuse" class="form-control" />
+            <br />
+            <label>請輸入 夜用量多 剩餘數量 (單位:片):</label>
+            <input type="number" inputmode='decimal' id="Hnightuse" class="form-control" />
+            <br />
+            <button class="btn btn-success btn-block" id="sure" style="background-color: #F77885">確定</button>
+        </div>
+    </div>
+
+    <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
+	<script>
+        function initializeLiff(myLiffId) {
+            liff.init({liffId: myLiffId });
+        }
+
+		function pushMsg(pname, pdatatime, pcycle, pPad, pLdailyuse, pNdailyuse, pHdailyuse, pNnightuse, pHnightuse) {
+			if (pname == '' || pdatatime == '' || pcycle == ''|| pPad == ''|| pLdailyuse == ''|| pNdailyuse == ''|| pHdailyuse == ''|| pNnightuse == ''|| pHnightuse == '') {  //資料檢查
+				alert('每個項目都必須輸入！');
+			 	return;
+			}
+			var msg = "###";  //回傳訊息字串
+			msg = msg + pname + "/";
+			msg = msg + pdatatime + "/";
+			msg = msg + pcycle+ "/";
+			msg = msg + pPad+ "/";
+			msg = msg + pLdailyuse+ "/";
+			msg = msg + pNdailyuse+ "/";
+			msg = msg + pHdailyuse+ "/";
+			msg = msg + pNnightuse+ "/";
+			msg = msg + pHnightuse;	
+			liff.sendMessages([  //推播訊息
+				{ type: 'text',
+				  text: msg
+				}
+			])
+				.then(() => {
+					liff.closeWindow();  //關閉視窗
+				});
+		}
+
+		$(document).ready(function () {
+			initializeLiff('{{ liffid }}');  //接收傳遞的 liffid 參數
+			$('#sure').click(function (e) {  //按下確定鈕
+				pushMsg($('#name').val(), $('#datetime').val(), $('#cycle').val(), $('#Pad').val(), $('#Ldailyuse').val(), $('#Ndailyuse').val(), $('#Hdailyuse').val(), $('#Nnightuse').val(), $('#Hnightuse').val());
+			});
+		});
+	</script>
+</body>
+</html>
