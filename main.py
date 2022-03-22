@@ -4,7 +4,7 @@ Created on Fri Mar 19 12:29:03 2021
 
 @author: nick
 """
-from flask import Flask
+from app import app
 from flask import request, abort, render_template
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
@@ -29,7 +29,6 @@ handler = WebhookHandler('')
 first_time_liffid = ''
 update_cotton_liffid = ''
 
-app = Flask(__name__)
 
 # 資料庫設定
 uri = ""  # or other relevant config var
