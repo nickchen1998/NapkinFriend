@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Mar 19 12:29:03 2021
+import datetime
+import requests
+import random
+import math
 
-@author: nick
-"""
 from app import app
 from flask import request, abort, render_template
 from linebot import LineBotApi, WebhookHandler
@@ -17,7 +16,8 @@ from linebot.models import ButtonsTemplate, ConfirmTemplate
 from linebot.models import DatetimePickerTemplateAction, PostbackEvent
 from urllib.parse import parse_qsl
 from flask_sqlalchemy import SQLAlchemy
-import datetime, requests, random, math
+
+from crud import create_table
 
 # google map 的憑證
 key = ""
@@ -28,7 +28,6 @@ handler = WebhookHandler('')
 # liffid 設定
 first_time_liffid = ''
 update_cotton_liffid = ''
-
 
 # 資料庫設定
 uri = ""  # or other relevant config var
@@ -47,72 +46,20 @@ def index():
 
 
 # 建立資料表
-@app.route('/createdb')
-def cottontable():
-    sql = """
-    DROP TABLE IF EXISTS cotton
-    """
-    db.engine.execute(sql)
-    sql = """
-    DROP TABLE IF EXISTS  cycle
-    """
-    db.engine.execute(sql)
-    sql = """
-    DROP TABLE IF EXISTS name
-    """
-    db.engine.execute(sql)
-    sql = """
-    DROP TABLE IF EXISTS predictdate
-    """
-    db.engine.execute(sql)
-
-    sql = """
-    CREATE TABLE cotton ( 
-    userid character varying(50) NOT NULL,
-    pad character varying(50) NOT NULL,
-    ldailyuse character varying(50) NOT NULL,
-    ndailyuse character varying(50) NOT NULL,
-    hdailyuse character varying(50) NOT NULL,
-    nnightuse character varying(50) NOT NULL,
-    hnightuse character varying(50) NOT NULL,
-    PRIMARY KEY (userid))
-    """
-    db.engine.execute(sql)
-    sql = """
-    CREATE TABLE cycle(
-    id serial ,
-    userid character varying(50) NOT NULL,
-    pdate character varying(50) NOT NULL,
-    cycle character varying(50) NOT NULL,
-    PRIMARY KEY (id))
-    """
-    db.engine.execute(sql)
-    sql = """
-    CREATE TABLE name(
-    userid character varying(50) NOT NULL,
-    name character varying(50) NOT NULL,
-    PRIMARY KEY (userid))
-    """
-    db.engine.execute(sql)
-    sql = """
-    CREATE TABLE predictdate(
-    userid character varying(50) NOT NULL,
-    predictdate character varying(50) NOT NULL,
-    PRIMARY KEY (userid))
-    """
-    db.engine.execute(sql)
-
+@app.route('/create_table')
+def create_table():
+    create_table()
     return "資料表建立成功"
 
 
 # 首次設定表單路由
-@app.route('/firsttimepage')
+@app.route('/first_time_page')
 def first_time_page():
     return render_template('first_time_setting.html', liffid=first_time_liffid)
 
 
 # 更新衛生棉表單
-@app.route('/updatecotton')
+@app.route('/update_cotton')
 def update_cotton_liff():
     return render_template('cotton_store_query.html', liffid=update_cotton_liffid)
 
@@ -197,9 +144,12 @@ def handle_message(event):
 
         elif order == '線上簡易門診':
             url_list = [
-                'https://images.pexels.com/photos/7775232/pexels-photo-7775232.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
-                'https://images.pexels.com/photos/7775231/pexels-photo-7775231.png?auto=compress&cs=tinysrgb&dpr=1&w=500',
-                'https://images.pexels.com/photos/7775230/pexels-photo-7775230.png?auto=compress&cs=tinysrgb&dpr=1&w=500']
+                'https://images.pexels.com/photos/7775232/'
+                'pexels-photo-7775232.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
+                'https://images.pexels.com/photos/7775231/'
+                'pexels-photo-7775231.png?auto=compress&cs=tinysrgb&dpr=1&w=500',
+                'https://images.pexels.com/photos/7775230/'
+                'pexels-photo-7775230.png?auto=compress&cs=tinysrgb&dpr=1&w=500']
 
             text1 = url_list[random.randint(0, 2)]
 
@@ -222,7 +172,8 @@ def handle_message(event):
             lat_long = order[3:].split('/')
 
             find_store(event, float(lat_long[0]), float(lat_long[1]), order[:3])
-    except:
+    except Exception as exc:
+        print(str(exc))
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='接收文字訊息發生錯誤！'))
 
 
