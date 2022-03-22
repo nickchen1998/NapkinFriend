@@ -201,7 +201,8 @@ def handle_location_message(event):
             alt_text='請選擇要搜尋的商店種類',
             template=ButtonsTemplate(
                 # 顯示的圖片
-                thumbnail_image_url='https://images.pexels.com/photos/7775892/pexels-photo-7775892.png?auto=compress&cs=tinysrgb&dpr=3&h=750&w=1260',
+                thumbnail_image_url='https://images.pexels.com/photos/7775892/'
+                                    'pexels-photo-7775892.png?auto=compress&cs=tinysrgb&dpr=3&h=750&w=1260',
                 title='請選擇要搜尋的商店種類',  # 主標題
                 text='今天，我想來點...─=≡Σ((( つ•̀ω•́)つ',  # 副標題
                 actions=[
@@ -233,7 +234,7 @@ def handle_postback(event):
     backdata = dict(parse_qsl(event.postback.data))  # 取得Postback資料
     if backdata.get('action') == 'choice':
         user_id = backdata.get('userid')
-        sendBack(event, backdata, user_id)
+        send_back(event, backdata, user_id)
 
 
 def input_date(event, user_id):
@@ -242,7 +243,8 @@ def input_date(event, user_id):
         message = TemplateSendMessage(
             alt_text='輸入生理期日期',
             template=ButtonsTemplate(
-                thumbnail_image_url='https://images.pexels.com/photos/7780388/pexels-photo-7780388.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
+                thumbnail_image_url='https://images.pexels.com/photos/7780388/'
+                                    'pexels-photo-7780388.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
                 title='輸入生理期日期',
                 text='請選擇最近一次的日期：',
                 actions=[
@@ -263,7 +265,7 @@ def input_date(event, user_id):
 
 
 # 由POSTBACK所觸發之輸入生理期
-def sendBack(event, backdata, user_id):
+def send_back(event, backdata, user_id):
     try:
         # 獲取取使用者回傳的日期
         dt = str(event.postback.params.get('date'))
