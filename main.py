@@ -565,8 +565,11 @@ def delete_data(event, user_id):
 
 def find_store(event, latitude, longitude, mtext):
     # 建立 list 來存取萃取出的店家資料
-    serach_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?key={}&location={},{}&rankby=distance&keyword={}&language=zh-TW".format(
-        key, latitude, longitude, mtext)
+    serach_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?" \
+                 "key={}&location={},{}&rankby=distance&keyword={}&language=zh-TW".format(key,
+                                                                                          latitude,
+                                                                                          longitude,
+                                                                                          mtext)
     serach_url_result = requests.get(serach_url)
     json_result = serach_url_result.json()
 
@@ -599,15 +602,17 @@ def find_store(event, latitude, longitude, mtext):
         # 切記不能塞NONE進去網址連結，若沒有預設圖片，須自己製作OR隨意指定
         if 'photos' not in json_result['results'][i]:
             photo_url_list.append(
-                'https://images.pexels.com/photos/7774217/pexels-photo-7774217.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940')
+                'https://images.pexels.com/photos/7774217/'
+                'pexels-photo-7774217.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940')
         else:
             photo_ref = json_result['results'][i]['photos'][0]['photo_reference']  # 圖片參考 ID
             photo_width = json_result['results'][i]['photos'][0]['width']  # 圖片寬度
             # 語法來源參考: https://www.tpisoftware.com/tpu/articleDetails/1136
             photo_url_list.append(
-                'https://maps.googleapis.com/maps/api/place/photo?key={}&photoreference={}&maxwidth={}'.format(key,
-                                                                                                               photo_ref,
-                                                                                                               photo_width))
+                'https://maps.googleapis.com/maps/api/place/photo?'
+                'key={}&photoreference={}&maxwidth={}'.format(key,
+                                                              photo_ref,
+                                                              photo_width))
 
         distance = math.sqrt(
             ((latitude - latitude_result_list[i]) ** 2) + ((longitude - longitude_result_list[i]) ** 2))
