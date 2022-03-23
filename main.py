@@ -22,6 +22,7 @@ from settings import Setting
 from crud.table import create_table
 from crud.cycle import get_user_cycle, add_user_cycle
 from model import Cycle
+from crud.predict_date import update_predict_date_by_user_id
 
 setting = Setting()
 
@@ -237,7 +238,7 @@ def handle_postback(event):
     back_data = dict(parse_qsl(event.postback.data))  # 取得Postback資料
     if back_data.get('action') == 'choice':
         user_id = back_data.get('userid')
-        send_back(event, back_data, user_id)
+        send_back(event, user_id)
 
 
 def input_date(event, user_id):
@@ -269,7 +270,7 @@ def input_date(event, user_id):
 
 
 # 由POSTBACK所觸發之輸入生理期
-def send_back(event, backdata, user_id):
+def send_back(event, user_id):
     try:
         # 獲取取使用者回傳的日期
         dt = str(event.postback.params.get('date'))
@@ -279,38 +280,33 @@ def send_back(event, backdata, user_id):
         result = get_user_cycle(user_id=user_id)
 
         # 擷取所有生理期時間以及週期
-        date_list = []
         cycle_list = []
         for data in result:
-            date_list.append(data['past_date'])
-            cycle_list.append(int(data['cycle']))
+            cycle_list.append(data["cycle"])
 
         # 擷取最近一次的生理期時間並進行格式化，方便datetime計算
-        last_date = str(date_list[0]).split('-')
+        last_date = result[0]
 
         # 計算本次週期
-        this_cycle = datetime.date(int(m_dt[0]), int(m_dt[1]), int(m_dt[2])) - datetime.date(int(last_date[0]),
-                                                                                             int(last_date[1]),
-                                                                                             int(last_date[2]))
-        m_this_cycle = int(str(this_cycle)[:2])
+        this_cycle = m_dt - last_date
 
         # 計算平均週期
-        avg_cycle = (sum(cycle_list) + m_this_cycle) / (len(cycle_list) + 1)
+        avg_cycle = (sum(cycle_list) + this_cycle.days) / (len(cycle_list) + 1)
 
         # 產生下個預測日
-        next_cycle = datetime.date(int(m_dt[0]), int(m_dt[1]), int(m_dt[2])) + datetime.timedelta(days=int(avg_cycle))
+        next_cycle = m_dt + datetime.timedelta(days=round(avg_cycle))
 
-        data = Cycle(user_id=user_id, past_date=dt, cycle=m_this_cycle)
+        data = Cycle(user_id=user_id, past_date=dt, cycle=this_cycle.days)
         add_user_cycle(db=db, data=data)
 
-        sql = "UPDATE predictdate SET predictdate = '%s'  WHERE userid = '%s'" % (str(next_cycle), user_id)
-        db.engine.execute(sql)
+        update_predict_date_by_user_id(db=db, user_id=user_id, predict_date=next_cycle)
 
         message = TextSendMessage(
             text='已為您新增本次週期資料，請點選查詢生理期進行查看'
         )
         line_bot_api.reply_message(event.reply_token, message)
-    except:
+    except Exception as exc:
+        print(str(exc))
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='輸入生理期發生錯誤！'))
 
 
