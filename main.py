@@ -1,4 +1,6 @@
 import datetime
+import logging
+
 import requests
 import random
 import math
@@ -17,8 +19,9 @@ from linebot.models import DatetimePickerTemplateAction, PostbackEvent
 from urllib.parse import parse_qsl
 from flask_sqlalchemy import SQLAlchemy
 from settings import Setting
-from crud import create_table
-
+from crud.table import create_table
+from crud.cycle import get_user_cycle, add_user_cycle
+from model import Cycle
 
 setting = Setting()
 
@@ -82,8 +85,17 @@ def handle_message(event):
             select_cotton(event)
 
         elif order == "附近藥妝店":
+            text = """
+            請依照下列方式回傳所在位置 : \n
+            1. 點選圖文選單旁的鍵盤樣式 \n 
+            2. 點選 " > " \n 
+            3. 點選 " + " \n 
+            4. 點選 "位置資訊" \n 
+            5. 點選所在地回傳地址'
+            """
+
             messages = TextSendMessage(
-                text='請依照下列方式回傳所在位置 : \n 1. 點選圖文選單旁的鍵盤樣式 \n 2. 點選 " > " \n 3. 點選 " + " \n 4. 點選 "位置資訊" \n 5. 點選所在地回傳地址'
+                text=text
             )
             line_bot_api.reply_message(event.reply_token, messages)
 
@@ -215,16 +227,17 @@ def handle_location_message(event):
             )
         )
         line_bot_api.reply_message(event.reply_token, message)
-    except:
+    except Exception as exc:
+        print(str(exc))
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='接收位置訊息發生錯誤！'))
 
 
 @handler.add(PostbackEvent)  # PostbackTemplateAction觸發此事件
 def handle_postback(event):
-    backdata = dict(parse_qsl(event.postback.data))  # 取得Postback資料
-    if backdata.get('action') == 'choice':
-        user_id = backdata.get('userid')
-        send_back(event, backdata, user_id)
+    back_data = dict(parse_qsl(event.postback.data))  # 取得Postback資料
+    if back_data.get('action') == 'choice':
+        user_id = back_data.get('userid')
+        send_back(event, back_data, user_id)
 
 
 def input_date(event, user_id):
@@ -250,7 +263,8 @@ def input_date(event, user_id):
             )
         )
         line_bot_api.reply_message(event.reply_token, message)
-    except:
+    except Exception as exc:
+        print(str(exc))
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='產生輸入生理期表單發生錯誤！'))
 
 
@@ -259,17 +273,16 @@ def send_back(event, backdata, user_id):
     try:
         # 獲取取使用者回傳的日期
         dt = str(event.postback.params.get('date'))
-        m_dt = dt.split('-')
+        m_dt = datetime.datetime.fromisoformat(dt)
 
         # 從資料庫調取使用者全部生理期資料
-        sql = "SELECT * FROM cycle WHERE userid = '%s' ORDER BY id DESC" % (user_id)
-        result = db.engine.execute(sql)
+        result = get_user_cycle(user_id=user_id)
 
         # 擷取所有生理期時間以及週期
         date_list = []
         cycle_list = []
         for data in result:
-            date_list.append(data['pdate'])
+            date_list.append(data['past_date'])
             cycle_list.append(int(data['cycle']))
 
         # 擷取最近一次的生理期時間並進行格式化，方便datetime計算
@@ -287,10 +300,8 @@ def send_back(event, backdata, user_id):
         # 產生下個預測日
         next_cycle = datetime.date(int(m_dt[0]), int(m_dt[1]), int(m_dt[2])) + datetime.timedelta(days=int(avg_cycle))
 
-        # 將資料寫回資料庫
-        sql = "INSERT INTO cycle (userid, pdate, cycle) VALUES('%s', '%s', '%s')" % (
-            user_id, str(dt), str(m_this_cycle))
-        db.engine.execute(sql)
+        data = Cycle(user_id=user_id, past_date=dt, cycle=m_this_cycle)
+        add_user_cycle(db=db, data=data)
 
         sql = "UPDATE predictdate SET predictdate = '%s'  WHERE userid = '%s'" % (str(next_cycle), user_id)
         db.engine.execute(sql)
