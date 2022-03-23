@@ -1,6 +1,3 @@
-## 創作理念連結:
-https://hackmd.io/wFY-3J6KTmuRBDUSU_1I3g?view
-
 ## 若要部屬到 Heroku 要加入以下檔案
 1. Porcfile (無副檔名)
 2. requirements.txt

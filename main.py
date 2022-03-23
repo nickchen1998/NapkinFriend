@@ -16,26 +16,16 @@ from linebot.models import ButtonsTemplate, ConfirmTemplate
 from linebot.models import DatetimePickerTemplateAction, PostbackEvent
 from urllib.parse import parse_qsl
 from flask_sqlalchemy import SQLAlchemy
-
+from settings import Setting
 from crud import create_table
 
-# google map 的憑證
-key = ""
-# line bot 的 channel token
-line_bot_api = LineBotApi('')
-# line bot 的 channel secret
-handler = WebhookHandler('')
-# liffid 設定
-first_time_liffid = ''
-update_cotton_liffid = ''
+
+setting = Setting()
+
+line_bot_api = LineBotApi(setting.channel_token)
+handler = WebhookHandler(setting.channel_secret)
 
 # 資料庫設定
-uri = ""  # or other relevant config var
-if uri.startswith("postgres://"):
-    uri = uri.replace("postgres://", "postgresql://", 1)
-app.config['SQLALCHEMY_DATABASE_URI'] = uri
-# app.config['DATABASE_URL']=uri
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 db = SQLAlchemy(app)
 
 
@@ -55,13 +45,13 @@ def create_table():
 # 首次設定表單路由
 @app.route('/first_time_page')
 def first_time_page():
-    return render_template('first_time_setting.html', liffid=first_time_liffid)
+    return render_template('first_time_setting.html', liffid=setting.first_time_liff_id)
 
 
 # 更新衛生棉表單
 @app.route('/update_cotton')
 def update_cotton_liff():
-    return render_template('cotton_store_query.html', liffid=update_cotton_liffid)
+    return render_template('cotton_store_query.html', liffid=setting.update_cotton_liff_id)
 
 
 # 機器人主體路由
@@ -566,7 +556,7 @@ def delete_data(event, user_id):
 def find_store(event, latitude, longitude, mtext):
     # 建立 list 來存取萃取出的店家資料
     serach_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?" \
-                 "key={}&location={},{}&rankby=distance&keyword={}&language=zh-TW".format(key,
+                 "key={}&location={},{}&rankby=distance&keyword={}&language=zh-TW".format(setting.google_map_key,
                                                                                           latitude,
                                                                                           longitude,
                                                                                           mtext)
@@ -610,7 +600,7 @@ def find_store(event, latitude, longitude, mtext):
             # 語法來源參考: https://www.tpisoftware.com/tpu/articleDetails/1136
             photo_url_list.append(
                 'https://maps.googleapis.com/maps/api/place/photo?'
-                'key={}&photoreference={}&maxwidth={}'.format(key,
+                'key={}&photoreference={}&maxwidth={}'.format(setting.google_map_key,
                                                               photo_ref,
                                                               photo_width))
 
