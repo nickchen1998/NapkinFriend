@@ -1,6 +1,4 @@
 import datetime
-import logging
-
 import requests
 import random
 import math
@@ -19,10 +17,7 @@ from linebot.models import DatetimePickerTemplateAction, PostbackEvent
 from urllib.parse import parse_qsl
 from flask_sqlalchemy import SQLAlchemy
 from settings import Setting
-from crud.table import create_table
-from crud.cycle import get_user_cycle, add_user_cycle
-from model import Cycle
-from crud.predict_date import update_predict_date_by_user_id
+from model import Cycle, Cotton, PredictDate, Name
 
 setting = Setting()
 
@@ -31,6 +26,8 @@ handler = WebhookHandler(setting.channel_secret)
 
 # 資料庫設定
 db = SQLAlchemy(app)
+
+use_model = [Cycle, Cotton, PredictDate, Name]
 
 
 # 主路由
@@ -42,7 +39,8 @@ def index():
 # 建立資料表
 @app.route('/create_table')
 def create_table():
-    create_table()
+    db.drop_all()
+    db.create_all()
     return "資料表建立成功"
 
 
@@ -277,12 +275,12 @@ def send_back(event, user_id):
         m_dt = datetime.datetime.fromisoformat(dt)
 
         # 從資料庫調取使用者全部生理期資料
-        result = get_user_cycle(user_id=user_id)
+        result = Cycle.query.filter_by(user_id=user_id).order_by(Cycle.id).desc().all()
 
         # 擷取所有生理期時間以及週期
         cycle_list = []
         for data in result:
-            cycle_list.append(data["cycle"])
+            cycle_list.append(data.cycle)
 
         # 擷取最近一次的生理期時間並進行格式化，方便datetime計算
         last_date = result[0]
@@ -297,9 +295,10 @@ def send_back(event, user_id):
         next_cycle = m_dt + datetime.timedelta(days=round(avg_cycle))
 
         data = Cycle(user_id=user_id, past_date=dt, cycle=this_cycle.days)
-        add_user_cycle(db=db, data=data)
+        db.session.add(data)
 
-        update_predict_date_by_user_id(db=db, user_id=user_id, predict_date=next_cycle)
+        db_predict_date: PredictDate = PredictDate.query.filter_by(user_id=user_id).first()
+        db_predict_date.predict_date = next_cycle
 
         message = TextSendMessage(
             text='已為您新增本次週期資料，請點選查詢生理期進行查看'
@@ -314,34 +313,25 @@ def send_back(event, user_id):
 def query_cycle(event, user_id):
     try:
         # 從週期資料表撈過往週期
-        sql = "SELECT * FROM cycle WHERE userid = '%s' ORDER BY id DESC LIMIT 1" % (user_id)
-        result = db.engine.execute(sql)
-        data_list = []
-        for data in result:
-            data_list.append(data['pdate'])
-            data_list.append(data['cycle'])
-
+        latest_cycle: Cycle = Cycle.query.filter_by(user_id=user_id).order_by(Cycle.id).desc().limit(1).first()
         # 從預測日資料表撈取預測日期
-        sql = "SELECT * FROM predictdate WHERE userid = '%s'" % (user_id)
-        result = db.engine.execute(sql)
-        pre_list = []
-        for data in result:
-            pre_list.append(data['predictdate'])
+        predict_date: PredictDate = PredictDate.query.filter_by(user_id=user_id).first()
 
         # 製作字串
         text1 = ''
         text1 += '您目前的平均週期為: ' + '\n'
-        text1 += data_list[1] + '\n'
+        text1 += latest_cycle.cycle + '\n'
         text1 += '您最近一次的生理期為: ' + '\n'
-        text1 += data_list[0] + '\n'
+        text1 += latest_cycle.past_date.isoformat() + '\n'
         text1 += '您下一次預測的生理期為: ' + '\n'
-        text1 += pre_list[0]
+        text1 += predict_date.predict_date.isoformat()
 
         message = TextSendMessage(
             text=text1
         )
         line_bot_api.reply_message(event.reply_token, message)
-    except:
+    except Exception as exc:
+        print(str(exc))
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='查詢生理期發生錯誤！'))
 
 
@@ -352,7 +342,8 @@ def select_cotton(event):
             alt_text='棉棉庫存量',
             template=ButtonsTemplate(
                 # 顯示的圖片
-                thumbnail_image_url='https://images.pexels.com/photos/7765684/pexels-photo-7765684.png?auto=compress&cs=tinysrgb&dpr=3&h=750&w=1260',
+                thumbnail_image_url='https://images.pexels.com/photos/7765684/'
+                                    'pexels-photo-7765684.png?auto=compress&cs=tinysrgb&dpr=3&h=750&w=1260',
                 title='棉棉庫存量',  # 主標題
                 text='今天，我想來點...─=≡Σ((( つ•̀ω•́)つ',  # 副標題
                 actions=[
@@ -369,38 +360,31 @@ def select_cotton(event):
             )
         )
         line_bot_api.reply_message(event.reply_token, message)
-    except:
+    except Exception as exc:
+        print(str(exc))
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='產生衛生棉庫存表單發生錯誤！'))
 
 
 # 衛生棉庫存查詢
 def query_cotton(event, user_id):
     try:
-        sql = "SELECT * FROM cotton WHERE userid =  '%s'" % (user_id)
-        result = db.engine.execute(sql)
-        msg = []
-        for data in result:
-            msg.append(data['pad'])
-            msg.append(data['ldailyuse'])
-            msg.append(data['ndailyuse'])
-            msg.append(data['hdailyuse'])
-            msg.append(data['nnightuse'])
-            msg.append(data['hnightuse'])
+        result = Cotton.query.filter_by(user_id=user_id).first()
 
         text1 = ""
         text1 += "你的棉棉庫存  (✪ω✪) " + "\n"
-        text1 += "輕薄護墊 : " + str(msg[0]) + "片" + "\n"
-        text1 += "日用量少 : " + str(msg[1]) + "片" + "\n"
-        text1 += "日用正常 : " + str(msg[2]) + "片" + "\n"
-        text1 += "日用量多 : " + str(msg[3]) + "片" + "\n"
-        text1 += "夜用正常 : " + str(msg[4]) + "片" + "\n"
-        text1 += "夜用量多 : " + str(msg[5]) + "片"
+        text1 += f"輕薄護墊 : {result.pad} 片" + "\n"
+        text1 += f"日用量少 : {result.little_daily} 片" + "\n"
+        text1 += f"日用正常 : {result.normal_daily} 片" + "\n"
+        text1 += f"日用量多 : {result.high_daily} 片" + "\n"
+        text1 += f"夜用正常 : {result.normal_night} 片" + "\n"
+        text1 += f"夜用量多 : {result.high_night} 片"
 
         message = TextSendMessage(
             text=text1
         )
         line_bot_api.reply_message(event.reply_token, message)
-    except:
+    except Exception as exc:
+        print(str(exc))
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="查詢棉棉庫存發生錯誤"))
 
 
@@ -411,29 +395,16 @@ def update_cotton(event, mtext, user_id):
         flist = list(map(int, mtext[2:].split('/')))
 
         # 讓使用者根據每天使用情況作新增或刪除
-        sql = "SELECT * FROM cotton WHERE userid = '%s'" % (user_id)
-        result = db.engine.execute(sql)
-        cotton_store_list = []
+        db_cotton: Cotton = Cotton.query.filter_by(user_id=user_id).first()
 
-        for data in result:
-            cotton_store_list.append(int(data['pad']))
-            cotton_store_list.append(int(data['ldailyuse']))
-            cotton_store_list.append(int(data['ndailyuse']))
-            cotton_store_list.append(int(data['hdailyuse']))
-            cotton_store_list.append(int(data['nnightuse']))
-            cotton_store_list.append(int(data['hnightuse']))
+        db_cotton.pad += flist[0]
+        db_cotton.little_daily += flist[1]
+        db_cotton.normal_daily += flist[2]
+        db_cotton.high_daily += flist[3]
+        db_cotton.normal_night += flist[4]
+        db_cotton.high_night += flist[5]
 
-        # 計算輸入的情況並和資料庫內的資料做計算
-        calculate_cotton_list = []
-        for i in range(len(cotton_store_list)):
-            calculate_cotton_list.append(cotton_store_list[i] + flist[i])
-
-        s_calculate_cotton_list = list(map(str, calculate_cotton_list))
-        sql = "UPDATE cotton SET pad = '%s', ldailyuse='%s', ndailyuse='%s', hdailyuse='%s', nnightuse='%s', hnightuse='%s'  WHERE userid = '%s'" % (
-            s_calculate_cotton_list[0], s_calculate_cotton_list[1], s_calculate_cotton_list[2],
-            s_calculate_cotton_list[3],
-            s_calculate_cotton_list[4], s_calculate_cotton_list[5], user_id)
-        db.engine.execute(sql)
+        db.session.commit()
 
         text1 = ''
         text1 += '恭喜你！資料更新成功囉！' + "\n"
@@ -445,7 +416,8 @@ def update_cotton(event, mtext, user_id):
             text=text1
         )
         line_bot_api.reply_message(event.reply_token, message)
-    except:
+    except Exception as exc:
+        print(str(exc))
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='更新棉棉發生錯誤！'))
 
 
@@ -562,13 +534,13 @@ def delete_data(event, user_id):
 
 def find_store(event, latitude, longitude, mtext):
     # 建立 list 來存取萃取出的店家資料
-    serach_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?" \
+    search_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?" \
                  "key={}&location={},{}&rankby=distance&keyword={}&language=zh-TW".format(setting.google_map_key,
                                                                                           latitude,
                                                                                           longitude,
                                                                                           mtext)
-    serach_url_result = requests.get(serach_url)
-    json_result = serach_url_result.json()
+    search_url_result = requests.get(search_url)
+    json_result = search_url_result.json()
 
     name_result_list = []
     place_id_result_list = []
