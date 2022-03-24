@@ -1,8 +1,8 @@
-import datetime
 import requests
 import random
 import math
 
+from datetime import datetime, timedelta
 from app import app
 from flask import request, abort, render_template
 from linebot import LineBotApi, WebhookHandler
@@ -113,7 +113,7 @@ def handle_message(event):
             more_function(event)
 
         elif order == '刪除資料':
-            tConfirm(event)
+            delete_data_confirm_template(event)
 
         elif order == '確定':
             delete_data(event, user_id)
@@ -254,7 +254,7 @@ def input_date(event, user_id):
                         label="選取日期",
                         data=data_text,  # 觸發postback事件
                         mode="date",  # 選取日期
-                        initial="%s" % datetime.date.today(),  # 顯示初始日期
+                        initial="%s" % datetime.today().isoformat(),  # 顯示初始日期
                         min="2020-02-22",  # 最小日期
                         max="2070-02-22"  # 最大日期
                     )
@@ -292,7 +292,7 @@ def send_back(event, user_id):
         avg_cycle = (sum(cycle_list) + this_cycle.days) / (len(cycle_list) + 1)
 
         # 產生下個預測日
-        next_cycle = m_dt + datetime.timedelta(days=round(avg_cycle))
+        next_cycle = m_dt + timedelta(days=round(avg_cycle))
 
         data = Cycle(user_id=user_id, past_date=dt, cycle=this_cycle.days)
         db.session.add(data)
@@ -438,35 +438,49 @@ def first_time_set(event, mtext, user_id):
         text1 += '親愛的 : ' + str(flist[0]) + " 已紀錄您的資料"
 
         # 計算預測日
-        m_this_date = str(flist[1]).split('-')
-        predict_date = datetime.date(int(m_this_date[0]), int(m_this_date[1]),
-                                     int(m_this_date[2])) + datetime.timedelta(days=int(flist[2]))
+        m_this_date = datetime.fromisoformat(str(flist[1]))
+        predict_date = m_this_date + timedelta(days=int(flist[2]))
 
         # 將週期資料寫進週期資料表
-        insert_cycle_sql = "INSERT INTO cycle (userid, pdate, cycle) VALUES('%s', '%s', '%s')" % (
-            str(user_id), str(flist[1]), str(flist[2]))
-        db.engine.execute(insert_cycle_sql)
+        cycle_data = Cycle()
+        cycle_data.user_id = user_id
+        cycle_data.past_date = predict_date
+        cycle_data.cycle = m_this_date
+
+        db.session.add(cycle_data)
 
         # 將預測日寫進預測日資料表
-        insert_predict_sql = "INSERT INTO predictdate (userid, predictdate) VALUES('%s', '%s')" % (
-            str(user_id), str(predict_date))
-        db.engine.execute(insert_predict_sql)
+        db_predict_date = PredictDate()
+        db_predict_date.predict_date = predict_date
+
+        db.session.add(db_predict_date)
 
         # 將庫存寫進庫存資料表
-        insert_cotton_sql = "INSERT INTO cotton (userid, pad, ldailyuse, ndailyuse, hdailyuse, nnightuse, hnightuse) VALUES('%s', '%s', '%s', '%s', '%s', '%s', '%s')" % (
-            str(user_id), str(flist[3]), str(flist[4]), str(flist[5]), str(flist[6]), str(flist[7]), str(flist[8]))
-        db.engine.execute(insert_cotton_sql)
+        db_cotton = Cotton()
+        db_cotton.user_id = user_id
+        db_cotton.pad = int(flist[3])
+        db_cotton.little_daily = int(flist[4])
+        db_cotton.normal_daily = int(flist[5])
+        db_cotton.high_daily = int(flist[6])
+        db_cotton.normal_night = int(flist[7])
+        db_cotton.high_night = int(flist[8])
+
+        db.session.add(db_cotton)
 
         # 將姓名寫進姓名資料表
-        insert_name_sql = "INSERT INTO name (userid, name) VALUES('%s', '%s')" % (str(user_id), str(flist[0]))
-        db.engine.execute(insert_name_sql)
+        db_name = Name()
+        db_name.user_id = user_id
+        db_name.name = str(flist[0])
+
+        db.session.add(db_name)
 
         # 回傳給使用者查看
         message = TextSendMessage(
             text=text1
         )
         line_bot_api.reply_message(event.reply_token, message)
-    except:
+    except Exception as exc:
+        print(str(exc))
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='首次設定發生錯誤！'))
 
 
@@ -477,7 +491,8 @@ def more_function(event):
             alt_text='更多功能',
             template=ButtonsTemplate(
                 # 顯示的圖片
-                thumbnail_image_url='https://images.pexels.com/photos/7774708/pexels-photo-7774708.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
+                thumbnail_image_url='https://images.pexels.com/photos/7774708/'
+                                    'pexels-photo-7774708.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
                 title='更多功能',  # 主標題
                 text='今天，我想來點...─=≡Σ((( つ•̀ω•́)つ',  # 副標題
                 actions=[
@@ -500,7 +515,8 @@ def more_function(event):
             )
         )
         line_bot_api.reply_message(event.reply_token, message)
-    except:
+    except Exception as exc:
+        print(str(exc))
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='產生更多功能表單發生錯誤！'))
 
 
@@ -528,7 +544,8 @@ def delete_data(event, user_id):
         )
         line_bot_api.reply_message(event.reply_token, message)
 
-    except:
+    except Exception as exc:
+        print(str(exc))
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='刪除資料發生錯誤！'))
 
 
@@ -667,11 +684,12 @@ def find_store(event, latitude, longitude, mtext):
             )
         )
         line_bot_api.reply_message(event.reply_token, messages)
-    except:
+    except Exception as exc:
+        print(str(exc))
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='查找店家發生錯誤！'))
 
 
-def tConfirm(event):  # 按鈕樣版
+def delete_data_confirm_template(event):  # 按鈕樣版
     text1 = '確定要放棄這隻棉棉草泥馬了嗎？草泥馬會很難過的！' + '\n'
     text1 += '（注意！資料將會全部刪除）'
 
