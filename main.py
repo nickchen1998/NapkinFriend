@@ -3,7 +3,6 @@ import random
 import math
 
 from datetime import datetime, timedelta
-from app import app
 from flask import request, abort, render_template
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
@@ -18,6 +17,13 @@ from urllib.parse import parse_qsl
 from flask_sqlalchemy import SQLAlchemy
 from settings import Setting
 from model import Cycle, Cotton, PredictDate, Name
+from flask import Flask
+from settings import Setting
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = Setting.database_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+
 
 setting = Setting()
 

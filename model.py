@@ -1,8 +1,8 @@
-from app import app
-from flask_sqlalchemy import SQLAlchemy
+from main import db
+# from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
-db = SQLAlchemy(app)
+# db = SQLAlchemy(app)
 
 
 class Cotton(db.Model):
