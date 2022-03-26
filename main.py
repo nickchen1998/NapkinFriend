@@ -21,7 +21,12 @@ from settings import Setting
 setting = Setting()
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = setting.database_url
+
+db_url = setting.database_url
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 
 line_bot_api = LineBotApi(setting.channel_token)
