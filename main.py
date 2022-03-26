@@ -15,17 +15,15 @@ from linebot.models import ButtonsTemplate, ConfirmTemplate
 from linebot.models import DatetimePickerTemplateAction, PostbackEvent
 from urllib.parse import parse_qsl
 from flask_sqlalchemy import SQLAlchemy
-from settings import Setting
 from model import Cycle, Cotton, PredictDate, Name
 from flask import Flask
 from settings import Setting
 
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = Setting.database_url
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
-
-
 setting = Setting()
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = setting.database_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 
 line_bot_api = LineBotApi(setting.channel_token)
 handler = WebhookHandler(setting.channel_secret)
