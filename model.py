@@ -15,6 +15,17 @@ class Cotton(db.Model):
     normal_night = db.Column(db.INT, nullable=False)
     high_night = db.Column(db.INT, nullable=False)
 
+    def __init__(self, user_id: str = None, pad: int = None,
+                 little_daily: int = None, normal_daily: int = None, high_daily: int = None,
+                 normal_night: int = None, high_night: int = None):
+        self.user_id = user_id
+        self.pad = pad
+        self.little_daily = little_daily
+        self.normal_daily = normal_daily
+        self.high_daily = high_daily
+        self.normal_night = normal_night
+        self.high_night = high_night
+
 
 class Cycle(db.Model):
     __tablename__ = "cycle"

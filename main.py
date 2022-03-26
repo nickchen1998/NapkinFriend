@@ -272,7 +272,7 @@ def send_back(event, user_id):
     try:
         # 獲取取使用者回傳的日期
         dt = str(event.postback.params.get('date'))
-        m_dt = datetime.datetime.fromisoformat(dt)
+        m_dt = datetime.fromisoformat(dt)
 
         # 從資料庫調取使用者全部生理期資料
         result = Cycle.query.filter_by(user_id=user_id).order_by(Cycle.id).desc().all()
@@ -456,14 +456,8 @@ def first_time_set(event, mtext, user_id):
         db.session.add(db_predict_date)
 
         # 將庫存寫進庫存資料表
-        db_cotton = Cotton()
-        db_cotton.user_id = user_id
-        db_cotton.pad = int(flist[3])
-        db_cotton.little_daily = int(flist[4])
-        db_cotton.normal_daily = int(flist[5])
-        db_cotton.high_daily = int(flist[6])
-        db_cotton.normal_night = int(flist[7])
-        db_cotton.high_night = int(flist[8])
+        db_cotton = Cotton(user_id=user_id, pad=int(flist[3]), little_daily=int(flist[4]), normal_daily=int(flist[5]),
+                           high_daily=int(flist[6]), normal_night=int(flist[7]), high_night=int(flist[8]))
 
         db.session.add(db_cotton)
 
@@ -523,17 +517,20 @@ def more_function(event):
 # 刪除資料功能
 def delete_data(event, user_id):
     try:
-        del_cycle_sql = "DELETE FROM cycle WHERE userid = '%s'" % (user_id)
-        db.engine.execute(del_cycle_sql)
+        db_cycle = Cycle.query.filter_by(user_id=user_id).all()
+        for _item in db_cycle:
+            db.session.delete(_item)
 
-        del_cotton_sql = "DELETE FROM cotton WHERE userid = '%s'" % (user_id)
-        db.engine.execute(del_cotton_sql)
+        db_cotton = Cotton.query.filter_by(user_id=user_id).first()
+        db.session.delete(db_cotton)
 
-        del_name_sql = "DELETE FROM name WHERE userid = '%s'" % (user_id)
-        db.engine.execute(del_name_sql)
+        db_name = Name.query.filter_by(user_id=user_id).first()
+        db.session.delete(db_name)
 
-        del_pre_sql = "DELETE FROM predictdate WHERE userid = '%s'" % (user_id)
-        db.engine.execute(del_pre_sql)
+        db_predict_date = PredictDate.query.filter_by(user_id=user_id).first()
+        db.session.delete(db_predict_date)
+
+        db.session.commit()
 
         text1 = '已經和草泥馬和平分手(｡ ︿ ｡)' + '\n'
         text1 += '希望下次還可以再見面呢！' + '\n'
@@ -716,28 +713,16 @@ def delete_data_confirm_template(event):  # 按鈕樣版
 # 查詢近三次生理期的方法
 def query_pass_cycle(event, user_id):
     # 從週期資料表撈過往週期
-    sql = "SELECT * FROM cycle WHERE userid = '%s' ORDER BY id DESC LIMIT 3" % (user_id)
-    result = db.engine.execute(sql)
-    data_list = []
-    for i in range(len(result)):
-        data_list.append([])
-        for data in result:
-            data_list[i].append(data['pdate'])
-            data_list[i].append(data['cycle'])
+    db_cycle = Cycle.query.filter_by(user_id=user_id).order_by(Cycle.id).desc().limit(3).all()
 
     # 製作字串
     text1 = ''
-    for i in range(len(data_list)):
-        if i == 0:
-            text1 += '您最近一次的生理期為:' + '\n'
-            text1 += data_list[i]
-        elif i == 1:
-            text1 += '您的上上次的生理期為:' + '\n'
-            text1 += data_list[i]
-        elif i == 2:
-            text1 += '您上上上次的生理期為:' + '\n'
-            text1 += data_list[i]
-            break
+    text1 += '您最近一次的生理期為:' + '\n'
+    text1 += db_cycle[0].past_date
+    text1 += '您的上上次的生理期為:' + '\n'
+    text1 += db_cycle[1].past_date
+    text1 += '您上上上次的生理期為:' + '\n'
+    text1 += db_cycle[2].past_date
 
     message = TextSendMessage(
         text=text1
