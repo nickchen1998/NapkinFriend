@@ -17,7 +17,8 @@ from linebot.models import DatetimePickerTemplateAction, PostbackEvent
 from urllib.parse import parse_qsl
 from flask_sqlalchemy import SQLAlchemy
 from settings import Setting
-from model import Cycle, Cotton, PredictDate, Name
+from model.model import Cycle, Cotton, PredictDate, Name
+from functions.cotton import insert_mc_date, query_cycle
 
 setting = Setting()
 
@@ -71,20 +72,24 @@ def callback():
 # 接收文字訊息路由
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    try:
-        order = event.message.text
-        user_id = event.source.user_id
-        if order == "查詢生理期":
-            query_cycle(event, user_id)
+    order = event.message.text
+    user_id = event.source.user_id
+    if order == "查詢生理期":
+        try:
+            message = query_cycle()
+            line_bot_api.reply_message(event.reply_token, message)
+        except Exception as exc:
+            print(str(exc))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='查詢生理期發生錯誤！'))
 
-        elif order == "輸入生理期":
-            input_date(event, user_id)
+    elif order == "輸入生理期":
+        input_date(event, user_id)
 
-        elif order == '棉棉庫存量':
-            select_cotton(event)
+    elif order == '棉棉庫存量':
+        select_cotton(event)
 
-        elif order == "附近藥妝店":
-            text = """
+    elif order == "附近藥妝店":
+        text = """
             請依照下列方式回傳所在位置 : \n
             1. 點選圖文選單旁的鍵盤樣式 \n 
             2. 點選 " > " \n 
@@ -93,89 +98,86 @@ def handle_message(event):
             5. 點選所在地回傳地址'
             """
 
-            messages = TextSendMessage(
-                text=text
-            )
-            line_bot_api.reply_message(event.reply_token, messages)
+        messages = TextSendMessage(
+            text=text
+        )
+        line_bot_api.reply_message(event.reply_token, messages)
 
-        # 首次使用回傳資料之開頭
-        elif order[:3] == '###' and len(order) > 3:
-            first_time_set(event, order, user_id)
+    # 首次使用回傳資料之開頭
+    elif order[:3] == '###' and len(order) > 3:
+        first_time_set(event, order, user_id)
 
-        elif order == '查詢庫存':
-            query_cotton(event, user_id)
+    elif order == '查詢庫存':
+        query_cotton(event, user_id)
 
-        # 更新衛生棉庫存回傳資料開頭
-        elif order[:2] == '更新' and len(order) > 2:
-            update_cotton(event, order, user_id)
+    # 更新衛生棉庫存回傳資料開頭
+    elif order[:2] == '更新' and len(order) > 2:
+        update_cotton(event, order, user_id)
 
-        elif order == '更多功能':
-            more_function(event)
+    elif order == '更多功能':
+        more_function(event)
 
-        elif order == '刪除資料':
-            delete_data_confirm_template(event)
+    elif order == '刪除資料':
+        delete_data_confirm_template(event)
 
-        elif order == '確定':
-            delete_data(event, user_id)
+    elif order == '確定':
+        delete_data(event, user_id)
 
-        elif order == '再想想':
-            text1 = '請好好考慮清楚吧！'
-            messages = TextSendMessage(
-                text=text1
-            )
-            line_bot_api.reply_message(event.reply_token, messages)
+    elif order == '再想想':
+        text1 = '請好好考慮清楚吧！'
+        messages = TextSendMessage(
+            text=text1
+        )
+        line_bot_api.reply_message(event.reply_token, messages)
 
-        elif order == '首次設定':
-            text1 = '請點選下列網址進行首次設定: ' + '\n'
-            text1 += 'https://liff.line.me/1655866091-GaYAWL02'
-            messages = TextSendMessage(
-                text=text1
-            )
-            line_bot_api.reply_message(event.reply_token, messages)
+    elif order == '首次設定':
+        text1 = '請點選下列網址進行首次設定: ' + '\n'
+        text1 += 'https://liff.line.me/1655866091-GaYAWL02'
+        messages = TextSendMessage(
+            text=text1
+        )
+        line_bot_api.reply_message(event.reply_token, messages)
 
-        elif order == '聯絡我們':
-            text1 = '棉棉草泥馬罷工了？！' + '\n'
-            text1 += '如果有任何問題或建議' + '\n'
-            text1 += '可以到這裡告訴我們喔！' + '\n'
-            text1 += 'https://forms.gle/qS4erpRH5gTFD8Co6'
-            messages = TextSendMessage(
-                text=text1
-            )
-            line_bot_api.reply_message(event.reply_token, messages)
+    elif order == '聯絡我們':
+        text1 = '棉棉草泥馬罷工了？！' + '\n'
+        text1 += '如果有任何問題或建議' + '\n'
+        text1 += '可以到這裡告訴我們喔！' + '\n'
+        text1 += 'https://forms.gle/qS4erpRH5gTFD8Co6'
+        messages = TextSendMessage(
+            text=text1
+        )
+        line_bot_api.reply_message(event.reply_token, messages)
 
-        elif order == '線上簡易門診':
-            url_list = [
-                'https://images.pexels.com/photos/7775232/'
-                'pexels-photo-7775232.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
-                'https://images.pexels.com/photos/7775231/'
-                'pexels-photo-7775231.png?auto=compress&cs=tinysrgb&dpr=1&w=500',
-                'https://images.pexels.com/photos/7775230/'
-                'pexels-photo-7775230.png?auto=compress&cs=tinysrgb&dpr=1&w=500']
+    elif order == '線上簡易門診':
+        url_list = [
+            'https://images.pexels.com/photos/7775232/'
+            'pexels-photo-7775232.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
+            'https://images.pexels.com/photos/7775231/'
+            'pexels-photo-7775231.png?auto=compress&cs=tinysrgb&dpr=1&w=500',
+            'https://images.pexels.com/photos/7775230/'
+            'pexels-photo-7775230.png?auto=compress&cs=tinysrgb&dpr=1&w=500']
 
-            text1 = url_list[random.randint(0, 2)]
+        text1 = url_list[random.randint(0, 2)]
 
-            messages = ImageSendMessage(
-                original_content_url=text1,
-                preview_image_url=text1
-            )
-            line_bot_api.reply_message(event.reply_token, messages)
+        messages = ImageSendMessage(
+            original_content_url=text1,
+            preview_image_url=text1
+        )
+        line_bot_api.reply_message(event.reply_token, messages)
 
-        elif order[:4] == '便利商店' and len(order) > 4:
-            lat_long = order[4:].split('/')
+    elif order[:4] == '便利商店' and len(order) > 4:
+        lat_long = order[4:].split('/')
 
-            find_store(event, float(lat_long[0]), float(lat_long[1]), order[:4])
+        find_store(event, float(lat_long[0]), float(lat_long[1]), order[:4])
 
-        elif order[:3] == '康是美' and len(order) > 3:
-            lat_long = order[3:].split('/')
-            find_store(event, float(lat_long[0]), float(lat_long[1]), order[:3])
+    elif order[:3] == '康是美' and len(order) > 3:
+        lat_long = order[3:].split('/')
+        find_store(event, float(lat_long[0]), float(lat_long[1]), order[:3])
 
-        elif order[:3] == '屈臣氏' and len(order) > 3:
-            lat_long = order[3:].split('/')
+    elif order[:3] == '屈臣氏' and len(order) > 3:
+        lat_long = order[3:].split('/')
 
-            find_store(event, float(lat_long[0]), float(lat_long[1]), order[:3])
-    except Exception as exc:
-        print(str(exc))
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='接收文字訊息發生錯誤！'))
+        find_store(event, float(lat_long[0]), float(lat_long[1]), order[:3])
 
 
 # 接收位置訊息路由_查詢附近藥妝店
@@ -236,7 +238,14 @@ def handle_postback(event):
     back_data = dict(parse_qsl(event.postback.data))  # 取得Postback資料
     if back_data.get('action') == 'choice':
         user_id = back_data.get('userid')
-        send_back(event, user_id)
+
+        try:
+            insert_mc_date(db=db, event=event, user_id=user_id)
+        except Exception as exc:
+            print(str(exc))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='輸入生理期發生錯誤！'))
+
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='已為您新增本次週期資料，請點選查詢生理期進行查看'))
 
 
 def input_date(event, user_id):
@@ -265,74 +274,6 @@ def input_date(event, user_id):
     except Exception as exc:
         print(str(exc))
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='產生輸入生理期表單發生錯誤！'))
-
-
-# 由POSTBACK所觸發之輸入生理期
-def send_back(event, user_id):
-    try:
-        # 獲取取使用者回傳的日期
-        dt = str(event.postback.params.get('date'))
-        m_dt = datetime.fromisoformat(dt)
-
-        # 從資料庫調取使用者全部生理期資料
-        result = Cycle.query.filter_by(user_id=user_id).order_by(Cycle.id).desc().all()
-
-        # 擷取所有生理期時間以及週期
-        cycle_list = []
-        for data in result:
-            cycle_list.append(data.cycle)
-
-        # 擷取最近一次的生理期時間計算
-        last_date = result[0]
-
-        # 計算本次週期
-        this_cycle = m_dt - last_date
-
-        # 計算平均週期
-        avg_cycle = (sum(cycle_list) + this_cycle.days) / (len(cycle_list) + 1)
-
-        # 產生下個預測日
-        next_cycle = m_dt + timedelta(days=round(avg_cycle))
-
-        data = Cycle(user_id=user_id, mc_date=m_dt, cycle=this_cycle.days)
-        db.session.add(data)
-
-        db_predict_date: PredictDate = PredictDate.query.filter_by(user_id=user_id).first()
-        db_predict_date.predict_date = next_cycle
-
-        db.session.commit()
-
-        message = TextSendMessage(text='已為您新增本次週期資料，請點選查詢生理期進行查看')
-        line_bot_api.reply_message(event.reply_token, message)
-    except Exception as exc:
-        print(str(exc))
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='輸入生理期發生錯誤！'))
-
-
-# 查詢生理期
-def query_cycle(event, user_id):
-    try:
-        # 從週期資料表撈過往週期
-        latest_cycle: Cycle = Cycle.query.filter_by(user_id=user_id).order_by(Cycle.id).desc().limit(1).first()
-        # 從預測日資料表撈取預測日期
-        predict_date: PredictDate = PredictDate.query.filter_by(user_id=user_id).first()
-
-        # 製作字串
-        text1 = ''
-        text1 += '您目前的平均週期為: ' + '\n'
-        text1 += f"{latest_cycle.cycle}" + '\n'
-        text1 += '您最近一次的生理期為: ' + '\n'
-        text1 += latest_cycle.mc_date.isoformat() + '\n'
-        text1 += '您下一次預測的生理期為: ' + '\n'
-        text1 += predict_date.predict_date.isoformat()
-
-        message = TextSendMessage(
-            text=text1
-        )
-        line_bot_api.reply_message(event.reply_token, message)
-    except Exception as exc:
-        print(str(exc))
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='查詢生理期發生錯誤！'))
 
 
 # 衛生棉庫存選取表單
