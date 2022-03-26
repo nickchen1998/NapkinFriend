@@ -14,7 +14,6 @@ from linebot.models import CarouselTemplate, CarouselColumn
 from linebot.models import ButtonsTemplate, ConfirmTemplate
 from linebot.models import DatetimePickerTemplateAction, PostbackEvent
 from urllib.parse import parse_qsl
-from flask_sqlalchemy import SQLAlchemy
 from model import Cycle, Cotton, PredictDate, Name, db
 from flask import Flask
 from settings import Setting
