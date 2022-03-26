@@ -279,7 +279,7 @@ def send_back(event, user_id):
         m_dt = datetime.fromisoformat(dt)
 
         # 從資料庫調取使用者全部生理期資料
-        result = Cycle.query.filter_by(user_id=user_id).order_by(Cycle.id).desc().all()
+        result = Cycle.query.filter_by(user_id=user_id).order_by(Cycle.id.desc()).all()
 
         # 擷取所有生理期時間以及週期
         cycle_list = []
@@ -317,7 +317,7 @@ def send_back(event, user_id):
 def query_cycle(event, user_id):
     try:
         # 從週期資料表撈過往週期
-        latest_cycle: Cycle = Cycle.query.filter_by(user_id=user_id).order_by(Cycle.id).desc().limit(1).first()
+        latest_cycle: Cycle = Cycle.query.filter_by(user_id=user_id).order_by(Cycle.id.desc()).limit(1).first()
         # 從預測日資料表撈取預測日期
         predict_date: PredictDate = PredictDate.query.filter_by(user_id=user_id).first()
 
@@ -692,7 +692,7 @@ def delete_data_confirm_template(event):  # 按鈕樣版
 # 查詢近三次生理期的方法
 def query_pass_cycle(event, user_id):
     # 從週期資料表撈過往週期
-    db_cycle = Cycle.query.filter_by(user_id=user_id).order_by(Cycle.id).desc().limit(3).all()
+    db_cycle = Cycle.query.filter_by(user_id=user_id).order_by(Cycle.id.desc()).limit(3).all()
 
     # 製作字串
     text1 = ''
