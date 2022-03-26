@@ -282,7 +282,7 @@ def send_back(event, user_id):
         for data in result:
             cycle_list.append(data.cycle)
 
-        # 擷取最近一次的生理期時間並進行格式化，方便datetime計算
+        # 擷取最近一次的生理期時間計算
         last_date = result[0]
 
         # 計算本次週期
@@ -294,15 +294,15 @@ def send_back(event, user_id):
         # 產生下個預測日
         next_cycle = m_dt + timedelta(days=round(avg_cycle))
 
-        data = Cycle(user_id=user_id, past_date=dt, cycle=this_cycle.days)
+        data = Cycle(user_id=user_id, mc_date=m_dt, cycle=this_cycle.days)
         db.session.add(data)
 
         db_predict_date: PredictDate = PredictDate.query.filter_by(user_id=user_id).first()
         db_predict_date.predict_date = next_cycle
 
-        message = TextSendMessage(
-            text='已為您新增本次週期資料，請點選查詢生理期進行查看'
-        )
+        db.session.commit()
+
+        message = TextSendMessage(text='已為您新增本次週期資料，請點選查詢生理期進行查看')
         line_bot_api.reply_message(event.reply_token, message)
     except Exception as exc:
         print(str(exc))
@@ -320,9 +320,9 @@ def query_cycle(event, user_id):
         # 製作字串
         text1 = ''
         text1 += '您目前的平均週期為: ' + '\n'
-        text1 += latest_cycle.cycle + '\n'
+        text1 += f"{latest_cycle.cycle}" + '\n'
         text1 += '您最近一次的生理期為: ' + '\n'
-        text1 += latest_cycle.past_date.isoformat() + '\n'
+        text1 += latest_cycle.mc_date.isoformat() + '\n'
         text1 += '您下一次預測的生理期為: ' + '\n'
         text1 += predict_date.predict_date.isoformat()
 
@@ -379,9 +379,7 @@ def query_cotton(event, user_id):
         text1 += f"夜用正常 : {result.normal_night} 片" + "\n"
         text1 += f"夜用量多 : {result.high_night} 片"
 
-        message = TextSendMessage(
-            text=text1
-        )
+        message = TextSendMessage(text=text1)
         line_bot_api.reply_message(event.reply_token, message)
     except Exception as exc:
         print(str(exc))
@@ -412,9 +410,7 @@ def update_cotton(event, mtext, user_id):
         text1 += 'ε٩(๑> ₃ <)۶з'
 
         # 回傳給使用者查看
-        message = TextSendMessage(
-            text=text1
-        )
+        message = TextSendMessage(text=text1)
         line_bot_api.reply_message(event.reply_token, message)
     except Exception as exc:
         print(str(exc))
@@ -442,36 +438,26 @@ def first_time_set(event, mtext, user_id):
         predict_date = m_this_date + timedelta(days=int(flist[2]))
 
         # 將週期資料寫進週期資料表
-        cycle_data = Cycle()
-        cycle_data.user_id = user_id
-        cycle_data.past_date = predict_date
-        cycle_data.cycle = m_this_date
-
+        cycle_data = Cycle(user_id=user_id, mc_date=predict_date, cycle=int(flist[2]))
         db.session.add(cycle_data)
 
         # 將預測日寫進預測日資料表
-        db_predict_date = PredictDate()
-        db_predict_date.predict_date = predict_date
-
+        db_predict_date = PredictDate(user_id=user_id, predict_date=predict_date)
         db.session.add(db_predict_date)
 
         # 將庫存寫進庫存資料表
         db_cotton = Cotton(user_id=user_id, pad=int(flist[3]), little_daily=int(flist[4]), normal_daily=int(flist[5]),
                            high_daily=int(flist[6]), normal_night=int(flist[7]), high_night=int(flist[8]))
-
         db.session.add(db_cotton)
 
         # 將姓名寫進姓名資料表
-        db_name = Name()
-        db_name.user_id = user_id
-        db_name.name = str(flist[0])
-
+        db_name = Name(user_id=user_id, name=str(flist[0]))
         db.session.add(db_name)
 
+        db.session.commit()
+
         # 回傳給使用者查看
-        message = TextSendMessage(
-            text=text1
-        )
+        message = TextSendMessage(text=text1)
         line_bot_api.reply_message(event.reply_token, message)
     except Exception as exc:
         print(str(exc))
@@ -491,20 +477,11 @@ def more_function(event):
                 text='今天，我想來點...─=≡Σ((( つ•̀ω•́)つ',  # 副標題
                 actions=[
                     # 顯示文字訊息
-                    MessageTemplateAction(
-                        label='首次設定',
-                        text='首次設定'
-                    ),
+                    MessageTemplateAction(label='首次設定', text='首次設定'),
                     # 顯示文字訊息
-                    MessageTemplateAction(
-                        label='刪除資料',
-                        text='刪除資料'
-                    ),
+                    MessageTemplateAction(label='刪除資料', text='刪除資料'),
                     # 顯示文字訊息
-                    MessageTemplateAction(
-                        label='聯絡我們',
-                        text='聯絡我們'
-                    )
+                    MessageTemplateAction(label='聯絡我們', text='聯絡我們')
                 ]
             )
         )
@@ -536,9 +513,7 @@ def delete_data(event, user_id):
         text1 += '希望下次還可以再見面呢！' + '\n'
         text1 += '如果要重新認養，請在「更多功能」內進行「首次設定」'
 
-        message = TextSendMessage(
-            text=text1
-        )
+        message = TextSendMessage(text=text1)
         line_bot_api.reply_message(event.reply_token, message)
 
     except Exception as exc:
@@ -718,15 +693,13 @@ def query_pass_cycle(event, user_id):
     # 製作字串
     text1 = ''
     text1 += '您最近一次的生理期為:' + '\n'
-    text1 += db_cycle[0].past_date
+    text1 += db_cycle[0].mc_date
     text1 += '您的上上次的生理期為:' + '\n'
-    text1 += db_cycle[1].past_date
+    text1 += db_cycle[1].mc_date
     text1 += '您上上上次的生理期為:' + '\n'
-    text1 += db_cycle[2].past_date
+    text1 += db_cycle[2].mc_date
 
-    message = TextSendMessage(
-        text=text1
-    )
+    message = TextSendMessage(text=text1)
     line_bot_api.reply_message(event.reply_token, message)
 
 

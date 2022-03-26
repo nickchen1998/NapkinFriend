@@ -1,5 +1,6 @@
 from app import app
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 db = SQLAlchemy(app)
 
@@ -31,8 +32,13 @@ class Cycle(db.Model):
     __tablename__ = "cycle"
     id = db.Column(db.INT, autoincrement=True, primary_key=True)
     user_id = db.Column(db.String(50), unique=True, nullable=False)
-    past_date = db.Column(db.DateTime, nullable=False)
+    mc_date = db.Column(db.DateTime, nullable=False)
     cycle = db.Column(db.INT, nullable=False)
+
+    def __init__(self, user_id: str = None, mc_date: datetime = None, cycle: int = None):
+        self.user_id = user_id
+        self.mc_date = mc_date
+        self.cycle = cycle
 
 
 class Name(db.Model):
@@ -41,9 +47,17 @@ class Name(db.Model):
     user_id = db.Column(db.String(50), unique=True, nullable=False)
     name = db.Column(db.String(50), nullable=False)
 
+    def __init__(self, user_id: str = None, name: str = None):
+        self.user_id = user_id
+        self.name = name
+
 
 class PredictDate(db.Model):
     __tablename__ = "predict_date"
     id = db.Column(db.INT, autoincrement=True, primary_key=True)
     user_id = db.Column(db.String(50), unique=True, nullable=False)
     predict_date = db.Column(db.DateTime, nullable=False)
+
+    def __init__(self, user_id: str = None, predict_date: datetime = None):
+        self.user_id = user_id
+        self.predict_date = predict_date
