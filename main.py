@@ -281,8 +281,8 @@ def send_back(event, user_id):
             cycle_list.append(data.cycle)
 
         # 擷取最近一次的生理期時間計算
-        last_date = result[0]
-        this_cycle = m_dt - last_date
+        last_date: Cycle = result[0]
+        this_cycle = m_dt - last_date.mc_date
 
         # 計算平均週期
         avg_cycle = (sum(cycle_list) + this_cycle.days) / (len(cycle_list) + 1)
