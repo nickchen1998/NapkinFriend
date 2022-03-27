@@ -373,17 +373,19 @@ def select_cotton(event):
 def query_cotton(event, user_id):
     try:
         result = Cotton.query.filter_by(user_id=user_id).first()
+        if result:
+            text = ""
+            text += "你的棉棉庫存  (✪ω✪) " + "\n"
+            text += f"輕薄護墊 : {result.pad} 片" + "\n"
+            text += f"日用量少 : {result.little_daily} 片" + "\n"
+            text += f"日用正常 : {result.normal_daily} 片" + "\n"
+            text += f"日用量多 : {result.high_daily} 片" + "\n"
+            text += f"夜用正常 : {result.normal_night} 片" + "\n"
+            text += f"夜用量多 : {result.high_night} 片"
+        else:
+            text = "似乎還沒有您的資料，請使用首次設定進行設定"
 
-        text1 = ""
-        text1 += "你的棉棉庫存  (✪ω✪) " + "\n"
-        text1 += f"輕薄護墊 : {result.pad} 片" + "\n"
-        text1 += f"日用量少 : {result.little_daily} 片" + "\n"
-        text1 += f"日用正常 : {result.normal_daily} 片" + "\n"
-        text1 += f"日用量多 : {result.high_daily} 片" + "\n"
-        text1 += f"夜用正常 : {result.normal_night} 片" + "\n"
-        text1 += f"夜用量多 : {result.high_night} 片"
-
-        message = TextSendMessage(text=text1)
+        message = TextSendMessage(text=text)
         line_bot_api.reply_message(event.reply_token, message)
     except Exception as exc:
         print(str(exc))
