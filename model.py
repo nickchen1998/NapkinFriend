@@ -30,7 +30,7 @@ class Cotton(db.Model):
 class Cycle(db.Model):
     __tablename__ = "cycle"
     id = db.Column(db.INT, autoincrement=True, primary_key=True)
-    user_id = db.Column(db.String(50), unique=True, nullable=False)
+    user_id = db.Column(db.String(50), nullable=False)
     mc_date = db.Column(db.DateTime, nullable=False)
     cycle = db.Column(db.INT, nullable=False)
 
