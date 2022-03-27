@@ -190,13 +190,8 @@ def handle_location_message(event):
         store_category = ["屈臣氏", "康是美", "便利商店"]
 
         for store in store_category:
-            text = store
-            text += str(latitude) + '/'
-            text += str(longitude)
-
-            message_template = MessageTemplateAction(label=store,
-                                                     text=text)
-
+            text = store + str(latitude) + "/" + str(longitude)
+            message_template = MessageTemplateAction(label=store, text=text)
             actions.append(message_template)
 
         message = TemplateSendMessage(
