@@ -321,14 +321,17 @@ def query_cycle(event, user_id):
         # 從預測日資料表撈取預測日期
         predict_date: PredictDate = PredictDate.query.filter_by(user_id=user_id).first()
 
-        # 製作字串
-        text1 = ''
-        text1 += '您目前的平均週期為: ' + '\n'
-        text1 += f"{latest_cycle.cycle}" + '\n'
-        text1 += '您最近一次的生理期為: ' + '\n'
-        text1 += latest_cycle.mc_date.date().isoformat() + '\n'
-        text1 += '您下一次預測的生理期為: ' + '\n'
-        text1 += predict_date.predict_date.date().isoformat()
+        if latest_cycle and predict_date:
+            # 製作字串
+            text1 = ''
+            text1 += '您目前的平均週期為: ' + '\n'
+            text1 += f"{latest_cycle.cycle}" + '\n'
+            text1 += '您最近一次的生理期為: ' + '\n'
+            text1 += latest_cycle.mc_date.date().isoformat() + '\n'
+            text1 += '您下一次預測的生理期為: ' + '\n'
+            text1 += predict_date.predict_date.date().isoformat()
+        else:
+            text1 = "似乎還沒有您的資料，請使用首次設定進行設定"
 
         message = TextSendMessage(
             text=text1
@@ -686,24 +689,6 @@ def delete_data_confirm_template(event):  # 按鈕樣版
             ]
         )
     )
-    line_bot_api.reply_message(event.reply_token, message)
-
-
-# 查詢近三次生理期的方法
-def query_pass_cycle(event, user_id):
-    # 從週期資料表撈過往週期
-    db_cycle = Cycle.query.filter_by(user_id=user_id).order_by(Cycle.id.desc()).limit(3).all()
-
-    # 製作字串
-    text1 = ''
-    text1 += '您最近一次的生理期為:' + '\n'
-    text1 += db_cycle[0].mc_date
-    text1 += '您的上上次的生理期為:' + '\n'
-    text1 += db_cycle[1].mc_date.date()
-    text1 += '您上上上次的生理期為:' + '\n'
-    text1 += db_cycle[2].mc_date
-
-    message = TextSendMessage(text=text1)
     line_bot_api.reply_message(event.reply_token, message)
 
 
