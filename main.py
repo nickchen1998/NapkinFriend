@@ -186,17 +186,18 @@ def handle_location_message(event):
         latitude = float(event.message.latitude)
         longitude = float(event.message.longitude)
 
-        text1 = "屈臣氏"
-        text1 += str(latitude) + '/'
-        text1 += str(longitude)
+        actions = []
+        store_category = ["屈臣氏", "康是美", "便利商店"]
 
-        text2 = "康是美"
-        text2 += str(latitude) + '/'
-        text2 += str(longitude)
+        for store in store_category:
+            text = store
+            text += str(latitude) + '/'
+            text += str(longitude)
 
-        text3 = "便利商店"
-        text3 += str(latitude) + '/'
-        text3 += str(longitude)
+            message_template = MessageTemplateAction(label=store,
+                                                     text=text)
+
+            actions.append(message_template)
 
         message = TemplateSendMessage(
             alt_text='請選擇要搜尋的商店種類',
@@ -206,23 +207,7 @@ def handle_location_message(event):
                                     'pexels-photo-7775892.png?auto=compress&cs=tinysrgb&dpr=3&h=750&w=1260',
                 title='請選擇要搜尋的商店種類',  # 主標題
                 text='今天，我想來點...─=≡Σ((( つ•̀ω•́)つ',  # 副標題
-                actions=[
-                    # 顯示文字訊息
-                    MessageTemplateAction(
-                        label='屈臣氏',
-                        text=text1
-                    ),
-                    # 顯示文字訊息
-                    MessageTemplateAction(
-                        label='康是美',
-                        text=text2
-                    ),
-                    # 顯示文字訊息
-                    MessageTemplateAction(
-                        label='便利商店',
-                        text=text3
-                    )
-                ]
+                actions=actions
             )
         )
         line_bot_api.reply_message(event.reply_token, message)
