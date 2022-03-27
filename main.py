@@ -75,20 +75,19 @@ def callback():
 # 接收文字訊息路由
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    try:
-        order = event.message.text
-        user_id = event.source.user_id
-        if order == "查詢生理期":
-            query_cycle(event, user_id)
+    order = event.message.text
+    user_id = event.source.user_id
+    if order == "查詢生理期":
+        query_cycle(event, user_id)
 
-        elif order == "輸入生理期":
-            input_date(event, user_id)
+    elif order == "輸入生理期":
+        input_date(event, user_id)
 
-        elif order == '棉棉庫存量':
-            select_cotton(event)
+    elif order == '棉棉庫存量':
+        select_cotton(event)
 
-        elif order == "附近藥妝店":
-            text = """
+    elif order == "附近藥妝店":
+        text = """
             請依照下列方式回傳所在位置 : \n
             1. 點選圖文選單旁的鍵盤樣式 \n 
             2. 點選 " > " \n 
@@ -97,89 +96,86 @@ def handle_message(event):
             5. 點選所在地回傳地址'
             """
 
-            messages = TextSendMessage(
-                text=text
-            )
-            line_bot_api.reply_message(event.reply_token, messages)
+        messages = TextSendMessage(
+            text=text
+        )
+        line_bot_api.reply_message(event.reply_token, messages)
 
-        # 首次使用回傳資料之開頭
-        elif order[:3] == '###' and len(order) > 3:
-            first_time_set(event, order, user_id)
+    # 首次使用回傳資料之開頭
+    elif order[:3] == '###' and len(order) > 3:
+        first_time_set(event, order, user_id)
 
-        elif order == '查詢庫存':
-            query_cotton(event, user_id)
+    elif order == '查詢庫存':
+        query_cotton(event, user_id)
 
-        # 更新衛生棉庫存回傳資料開頭
-        elif order[:2] == '更新' and len(order) > 2:
-            update_cotton(event, order, user_id)
+    # 更新衛生棉庫存回傳資料開頭
+    elif order[:2] == '更新' and len(order) > 2:
+        update_cotton(event, order, user_id)
 
-        elif order == '更多功能':
-            more_function(event)
+    elif order == '更多功能':
+        more_function(event)
 
-        elif order == '刪除資料':
-            delete_data_confirm_template(event)
+    elif order == '刪除資料':
+        delete_data_confirm_template(event)
 
-        elif order == '確定':
-            delete_data(event, user_id)
+    elif order == '確定':
+        delete_data(event, user_id)
 
-        elif order == '再想想':
-            text1 = '請好好考慮清楚吧！'
-            messages = TextSendMessage(
-                text=text1
-            )
-            line_bot_api.reply_message(event.reply_token, messages)
+    elif order == '再想想':
+        text1 = '請好好考慮清楚吧！'
+        messages = TextSendMessage(
+            text=text1
+        )
+        line_bot_api.reply_message(event.reply_token, messages)
 
-        elif order == '首次設定':
-            text1 = '請點選下列網址進行首次設定: ' + '\n'
-            text1 += 'https://liff.line.me/1655866091-GaYAWL02'
-            messages = TextSendMessage(
-                text=text1
-            )
-            line_bot_api.reply_message(event.reply_token, messages)
+    elif order == '首次設定':
+        text1 = '請點選下列網址進行首次設定: ' + '\n'
+        text1 += 'https://liff.line.me/1655866091-GaYAWL02'
+        messages = TextSendMessage(
+            text=text1
+        )
+        line_bot_api.reply_message(event.reply_token, messages)
 
-        elif order == '聯絡我們':
-            text1 = '棉棉草泥馬罷工了？！' + '\n'
-            text1 += '如果有任何問題或建議' + '\n'
-            text1 += '可以到這裡告訴我們喔！' + '\n'
-            text1 += 'https://forms.gle/qS4erpRH5gTFD8Co6'
-            messages = TextSendMessage(
-                text=text1
-            )
-            line_bot_api.reply_message(event.reply_token, messages)
+    elif order == '聯絡我們':
+        text1 = '棉棉草泥馬罷工了？！' + '\n'
+        text1 += '如果有任何問題或建議' + '\n'
+        text1 += '可以到這裡告訴我們喔！' + '\n'
+        text1 += 'https://forms.gle/qS4erpRH5gTFD8Co6'
+        messages = TextSendMessage(
+            text=text1
+        )
+        line_bot_api.reply_message(event.reply_token, messages)
 
-        elif order == '線上簡易門診':
-            url_list = [
-                'https://images.pexels.com/photos/7775232/'
-                'pexels-photo-7775232.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
-                'https://images.pexels.com/photos/7775231/'
-                'pexels-photo-7775231.png?auto=compress&cs=tinysrgb&dpr=1&w=500',
-                'https://images.pexels.com/photos/7775230/'
-                'pexels-photo-7775230.png?auto=compress&cs=tinysrgb&dpr=1&w=500']
+    elif order == '線上簡易門診':
+        url_list = [
+            'https://images.pexels.com/photos/7775232/'
+            'pexels-photo-7775232.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
+            'https://images.pexels.com/photos/7775231/'
+            'pexels-photo-7775231.png?auto=compress&cs=tinysrgb&dpr=1&w=500',
+            'https://images.pexels.com/photos/7775230/'
+            'pexels-photo-7775230.png?auto=compress&cs=tinysrgb&dpr=1&w=500']
 
-            text1 = url_list[random.randint(0, 2)]
+        text1 = url_list[random.randint(0, 2)]
 
-            messages = ImageSendMessage(
-                original_content_url=text1,
-                preview_image_url=text1
-            )
-            line_bot_api.reply_message(event.reply_token, messages)
+        messages = ImageSendMessage(
+            original_content_url=text1,
+            preview_image_url=text1
+        )
+        line_bot_api.reply_message(event.reply_token, messages)
 
-        elif order[:4] == '便利商店' and len(order) > 4:
-            lat_long = order[4:].split('/')
+    elif order[:4] == '便利商店' and len(order) > 4:
+        lat_long = order[4:].split('/')
 
-            find_store(event, float(lat_long[0]), float(lat_long[1]), order[:4])
+        find_store(event, float(lat_long[0]), float(lat_long[1]), order[:4])
 
-        elif order[:3] == '康是美' and len(order) > 3:
-            lat_long = order[3:].split('/')
-            find_store(event, float(lat_long[0]), float(lat_long[1]), order[:3])
+    elif order[:3] == '康是美' and len(order) > 3:
+        lat_long = order[3:].split('/')
+        find_store(event, float(lat_long[0]), float(lat_long[1]), order[:3])
 
-        elif order[:3] == '屈臣氏' and len(order) > 3:
-            lat_long = order[3:].split('/')
+    elif order[:3] == '屈臣氏' and len(order) > 3:
+        lat_long = order[3:].split('/')
 
-            find_store(event, float(lat_long[0]), float(lat_long[1]), order[:3])
-    except Exception as exc:
-        print(str(exc))
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='接收文字訊息發生錯誤！'))
+        find_store(event, float(lat_long[0]), float(lat_long[1]), order[:3])
 
 
 # 接收位置訊息路由_查詢附近藥妝店
