@@ -442,7 +442,7 @@ def first_time_set(event, mtext, user_id):
         predict_date = m_this_date + timedelta(days=int(flist[2]))
 
         # 將週期資料寫進週期資料表
-        cycle_data = Cycle(user_id=user_id, mc_date=predict_date, cycle=int(flist[2]))
+        cycle_data = Cycle(user_id=user_id, mc_date=m_this_date, cycle=int(flist[2]))
         db.session.add(cycle_data)
 
         # 將預測日寫進預測日資料表
