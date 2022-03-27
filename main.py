@@ -400,23 +400,25 @@ def update_cotton(event, mtext, user_id):
 
         # 讓使用者根據每天使用情況作新增或刪除
         db_cotton: Cotton = Cotton.query.filter_by(user_id=user_id).first()
+        if db_cotton:
+            db_cotton.pad += flist[0]
+            db_cotton.little_daily += flist[1]
+            db_cotton.normal_daily += flist[2]
+            db_cotton.high_daily += flist[3]
+            db_cotton.normal_night += flist[4]
+            db_cotton.high_night += flist[5]
 
-        db_cotton.pad += flist[0]
-        db_cotton.little_daily += flist[1]
-        db_cotton.normal_daily += flist[2]
-        db_cotton.high_daily += flist[3]
-        db_cotton.normal_night += flist[4]
-        db_cotton.high_night += flist[5]
+            db.session.commit()
 
-        db.session.commit()
-
-        text1 = ''
-        text1 += '恭喜你！資料更新成功囉！' + "\n"
-        text1 += '點選「查詢庫存」確認看看吧！' + "\n"
-        text1 += 'ε٩(๑> ₃ <)۶з'
+            text = ''
+            text += '恭喜你！資料更新成功囉！' + "\n"
+            text += '點選「查詢庫存」確認看看吧！' + "\n"
+            text += 'ε٩(๑> ₃ <)۶з'
+        else:
+            text = "似乎還沒有您的資料，請使用首次設定進行設定"
 
         # 回傳給使用者查看
-        message = TextSendMessage(text=text1)
+        message = TextSendMessage(text=text)
         line_bot_api.reply_message(event.reply_token, message)
     except Exception as exc:
         print(str(exc))
@@ -501,25 +503,27 @@ def more_function(event):
 def delete_data(event, user_id):
     try:
         db_cycle = Cycle.query.filter_by(user_id=user_id).all()
-        for _item in db_cycle:
-            db.session.delete(_item)
-
         db_cotton = Cotton.query.filter_by(user_id=user_id).first()
-        db.session.delete(db_cotton)
-
         db_name = Name.query.filter_by(user_id=user_id).first()
-        db.session.delete(db_name)
-
         db_predict_date = PredictDate.query.filter_by(user_id=user_id).first()
-        db.session.delete(db_predict_date)
 
-        db.session.commit()
+        if db_cycle and db_cotton and db_name and db_predict_date:
+            for _item in db_cycle:
+                db.session.delete(_item)
 
-        text1 = '已經和草泥馬和平分手(｡ ︿ ｡)' + '\n'
-        text1 += '希望下次還可以再見面呢！' + '\n'
-        text1 += '如果要重新認養，請在「更多功能」內進行「首次設定」'
+            db.session.delete(db_cotton)
+            db.session.delete(db_name)
+            db.session.delete(db_predict_date)
 
-        message = TextSendMessage(text=text1)
+            db.session.commit()
+
+            text = '已經和草泥馬和平分手(｡ ︿ ｡)' + '\n'
+            text += '希望下次還可以再見面呢！' + '\n'
+            text += '如果要重新認養，請在「更多功能」內進行「首次設定」'
+        else:
+            text = "似乎還沒有您的資料，是要怎麼刪除"
+
+        message = TextSendMessage(text=text)
         line_bot_api.reply_message(event.reply_token, message)
 
     except Exception as exc:
