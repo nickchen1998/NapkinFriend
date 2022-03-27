@@ -235,7 +235,7 @@ def input_date(event, user_id):
                         data=data_text,  # 觸發postback事件
                         mode="date",  # 選取日期
                         initial=datetime.today().strftime("%Y-%m-%d"),  # 顯示初始日期
-                        min="2020-02-22",  # 最小日期
+                        min="2022-02-22",  # 最小日期
                         max="2070-02-22"  # 最大日期
                     )
                 ]
@@ -279,7 +279,6 @@ def send_back(event, user_id):
             db.session.commit()
 
             text = "已為您新增本次週期資料，請點選查詢生理期進行查看"
-
         else:
             text = "似乎還沒有您的資料，請使用首次設定進行設定"
     except Exception as exc:
@@ -300,19 +299,17 @@ def query_cycle(event, user_id):
 
         if latest_cycle and predict_date:
             # 製作字串
-            text1 = ''
-            text1 += '您目前的平均週期為: ' + '\n'
-            text1 += f"{latest_cycle.cycle}" + '\n'
-            text1 += '您最近一次的生理期為: ' + '\n'
-            text1 += latest_cycle.mc_date.date().isoformat() + '\n'
-            text1 += '您下一次預測的生理期為: ' + '\n'
-            text1 += predict_date.predict_date.date().isoformat()
+            text = ''
+            text += '您目前的平均週期為: ' + '\n'
+            text += f"{latest_cycle.cycle}" + '\n'
+            text += '您最近一次的生理期為: ' + '\n'
+            text += latest_cycle.mc_date.date().isoformat() + '\n'
+            text += '您下一次預測的生理期為: ' + '\n'
+            text += predict_date.predict_date.date().isoformat()
         else:
-            text1 = "似乎還沒有您的資料，請使用首次設定進行設定"
+            text = "似乎還沒有您的資料，請使用首次設定進行設定"
 
-        message = TextSendMessage(
-            text=text1
-        )
+        message = TextSendMessage(text=text)
         line_bot_api.reply_message(event.reply_token, message)
     except Exception as exc:
         print(str(exc))
@@ -455,6 +452,8 @@ def first_time_set(event, mtext, user_id):
 # 更多功能回傳表單
 def more_function(event):
     try:
+        options = ["首次設定", "刪除資料", "聯絡我們"]
+
         message = TemplateSendMessage(
             alt_text='更多功能',
             template=ButtonsTemplate(
@@ -463,14 +462,7 @@ def more_function(event):
                                     'pexels-photo-7774708.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
                 title='更多功能',  # 主標題
                 text='今天，我想來點...─=≡Σ((( つ•̀ω•́)つ',  # 副標題
-                actions=[
-                    # 顯示文字訊息
-                    MessageTemplateAction(label='首次設定', text='首次設定'),
-                    # 顯示文字訊息
-                    MessageTemplateAction(label='刪除資料', text='刪除資料'),
-                    # 顯示文字訊息
-                    MessageTemplateAction(label='聯絡我們', text='聯絡我們')
-                ]
+                actions=[MessageTemplateAction(label=_option, text=_option) for _option in options]
             )
         )
         line_bot_api.reply_message(event.reply_token, message)
@@ -655,21 +647,14 @@ def delete_data_confirm_template(event):  # 按鈕樣版
     text1 = '確定要放棄這隻棉棉草泥馬了嗎？草泥馬會很難過的！' + '\n'
     text1 += '（注意！資料將會全部刪除）'
 
+    options = ["確定", "再想想"]
+
     message = TemplateSendMessage(
         alt_text='刪除資料確認',
         template=ConfirmTemplate(
             title='刪除資料確認',  # 主標題
             text=text1,  # 副標題
-            actions=[
-                MessageTemplateAction(  # 顯示文字計息
-                    label='確定',
-                    text='確定'
-                ),
-                MessageTemplateAction(
-                    label='再想想',
-                    text='再想想'
-                )
-            ]
+            actions=[MessageTemplateAction(label=_option, text=_option) for _option in options]
         )
     )
     line_bot_api.reply_message(event.reply_token, message)
