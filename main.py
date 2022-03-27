@@ -269,16 +269,12 @@ def input_date(event, user_id):
 
 # 由POSTBACK所觸發之輸入生理期
 def send_back(event, user_id):
-    try:
-        # 獲取取使用者回傳的日期
-        print(event.postback.params.get('date'))
-        print(type(event.postback.params.get('date')))
-        dt = str(event.postback.params.get('date'))
-        m_dt = datetime.fromisoformat(dt)
+    # 獲取取使用者回傳的日期
+    m_dt = datetime.fromisoformat(event.postback.params.get('date'))
 
-        # 從資料庫調取使用者全部生理期資料
-        result = Cycle.query.filter_by(user_id=user_id).order_by(Cycle.id.desc()).all()
-
+    # 從資料庫調取使用者全部生理期資料
+    result = Cycle.query.filter_by(user_id=user_id).order_by(Cycle.id.desc()).all()
+    if result:
         # 擷取所有生理期時間以及週期
         cycle_list = []
         for data in result:
@@ -286,8 +282,6 @@ def send_back(event, user_id):
 
         # 擷取最近一次的生理期時間計算
         last_date = result[0]
-
-        # 計算本次週期
         this_cycle = m_dt - last_date
 
         # 計算平均週期
@@ -295,8 +289,7 @@ def send_back(event, user_id):
 
         # 產生下個預測日
         next_cycle = m_dt + timedelta(days=round(avg_cycle))
-
-        data = Cycle(user_id=user_id, mc_date=m_dt, cycle=this_cycle.days)
+        data = Cycle(user_id=user_id, mc_date=m_dt, cycle=int(this_cycle.days))
         db.session.add(data)
 
         db_predict_date: PredictDate = PredictDate.query.filter_by(user_id=user_id).first()
@@ -304,11 +297,13 @@ def send_back(event, user_id):
 
         db.session.commit()
 
-        message = TextSendMessage(text='已為您新增本次週期資料，請點選查詢生理期進行查看')
-        line_bot_api.reply_message(event.reply_token, message)
-    except Exception as exc:
-        print(str(exc))
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='輸入生理期發生錯誤！'))
+        text = "已為您新增本次週期資料，請點選查詢生理期進行查看"
+
+    else:
+        text = "似乎還沒有您的資料，請使用首次設定進行設定"
+
+    message = TextSendMessage(text=text)
+    line_bot_api.reply_message(event.reply_token, message)
 
 
 # 查詢生理期
