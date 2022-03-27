@@ -326,9 +326,9 @@ def query_cycle(event, user_id):
         text1 += '您目前的平均週期為: ' + '\n'
         text1 += f"{latest_cycle.cycle}" + '\n'
         text1 += '您最近一次的生理期為: ' + '\n'
-        text1 += latest_cycle.mc_date.isoformat() + '\n'
+        text1 += latest_cycle.mc_date.date().isoformat() + '\n'
         text1 += '您下一次預測的生理期為: ' + '\n'
-        text1 += predict_date.predict_date.isoformat()
+        text1 += predict_date.predict_date.date().isoformat()
 
         message = TextSendMessage(
             text=text1
@@ -699,7 +699,7 @@ def query_pass_cycle(event, user_id):
     text1 += '您最近一次的生理期為:' + '\n'
     text1 += db_cycle[0].mc_date
     text1 += '您的上上次的生理期為:' + '\n'
-    text1 += db_cycle[1].mc_date
+    text1 += db_cycle[1].mc_date.date()
     text1 += '您上上上次的生理期為:' + '\n'
     text1 += db_cycle[2].mc_date
 
