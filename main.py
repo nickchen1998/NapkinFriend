@@ -254,7 +254,7 @@ def input_date(event, user_id):
                         label="選取日期",
                         data=data_text,  # 觸發postback事件
                         mode="date",  # 選取日期
-                        initial="%s" % datetime.today().strftime("%Y-%m-%d"),  # 顯示初始日期
+                        initial=datetime.today().strftime("%Y-%m-%d"),  # 顯示初始日期
                         min="2020-02-22",  # 最小日期
                         max="2070-02-22"  # 最大日期
                     )
@@ -271,6 +271,8 @@ def input_date(event, user_id):
 def send_back(event, user_id):
     try:
         # 獲取取使用者回傳的日期
+        print(event.postback.params.get('date'))
+        print(type(event.postback.params.get('date')))
         dt = str(event.postback.params.get('date'))
         m_dt = datetime.fromisoformat(dt)
 
