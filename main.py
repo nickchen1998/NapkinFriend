@@ -269,38 +269,42 @@ def input_date(event, user_id):
 
 # 由POSTBACK所觸發之輸入生理期
 def send_back(event, user_id):
-    # 獲取取使用者回傳的日期
-    m_dt = datetime.fromisoformat(event.postback.params.get('date'))
+    try:
+        # 獲取取使用者回傳的日期
+        m_dt = datetime.fromisoformat(event.postback.params.get('date'))
 
-    # 從資料庫調取使用者全部生理期資料
-    result = Cycle.query.filter_by(user_id=user_id).order_by(Cycle.id.desc()).all()
-    if result:
-        # 擷取所有生理期時間以及週期
-        cycle_list = []
-        for data in result:
-            cycle_list.append(data.cycle)
+        # 從資料庫調取使用者全部生理期資料
+        result = Cycle.query.filter_by(user_id=user_id).order_by(Cycle.id.desc()).all()
+        if result:
+            # 擷取所有生理期時間以及週期
+            cycle_list = []
+            for data in result:
+                cycle_list.append(data.cycle)
 
-        # 擷取最近一次的生理期時間計算
-        last_date: Cycle = result[0]
-        this_cycle = m_dt - last_date.mc_date
+            # 擷取最近一次的生理期時間計算
+            last_date: Cycle = result[0]
+            this_cycle = m_dt - last_date.mc_date
 
-        # 計算平均週期
-        avg_cycle = (sum(cycle_list) + this_cycle.days) / (len(cycle_list) + 1)
+            # 計算平均週期
+            avg_cycle = (sum(cycle_list) + this_cycle.days) / (len(cycle_list) + 1)
 
-        # 產生下個預測日
-        next_cycle = m_dt + timedelta(days=round(avg_cycle))
-        data = Cycle(user_id=user_id, mc_date=m_dt, cycle=int(this_cycle.days))
-        db.session.add(data)
+            # 產生下個預測日
+            next_cycle = m_dt + timedelta(days=round(avg_cycle))
+            data = Cycle(user_id=user_id, mc_date=m_dt, cycle=int(this_cycle.days))
+            db.session.add(data)
 
-        db_predict_date: PredictDate = PredictDate.query.filter_by(user_id=user_id).first()
-        db_predict_date.predict_date = next_cycle
+            db_predict_date: PredictDate = PredictDate.query.filter_by(user_id=user_id).first()
+            db_predict_date.predict_date = next_cycle
 
-        db.session.commit()
+            db.session.commit()
 
-        text = "已為您新增本次週期資料，請點選查詢生理期進行查看"
+            text = "已為您新增本次週期資料，請點選查詢生理期進行查看"
 
-    else:
-        text = "似乎還沒有您的資料，請使用首次設定進行設定"
+        else:
+            text = "似乎還沒有您的資料，請使用首次設定進行設定"
+    except Exception as exc:
+        print(str(exc))
+        text = "輸入生理期發生錯誤，請截圖並回報問題"
 
     message = TextSendMessage(text=text)
     line_bot_api.reply_message(event.reply_token, message)
