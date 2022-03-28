@@ -1,21 +1,14 @@
-from flask import Flask
 from linebot import LineBotApi, WebhookHandler
 from linebot.models import TextSendMessage
 from settings import Setting
 from model import Cotton, PredictDate, Name, db
 from datetime import datetime, timedelta
+from app import app
 
 setting = Setting()
 line_bot_api = LineBotApi(setting.channel_token)
 handler = WebhookHandler(setting.channel_secret)
-app = Flask(__name__)
 
-# 資料庫設定
-db_url = setting.database_url
-if db_url.startswith("postgres://"):
-    db_url = db_url.replace("postgres://", "postgresql://", 1)
-app.config['SQLALCHEMY_DATABASE_URI'] = db_url
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 db.init_app(app)
 
 
@@ -46,7 +39,7 @@ def get_data():
                     cotton_message = save_message if danger_message == '以下種類的棉棉可能不足：' else danger_message
 
                     msg = f"親愛的 {name.name} 您好\n"
-                    msg += f"您的生理期預計於 {calculate_day} 內到來 \n"
+                    msg += f"您的生理期預計於 {calculate_day.days} 內到來 \n"
                     msg += f"{cotton_message}"
 
                     line_bot_api.push_message(to=_item.user_id, messages=TextSendMessage(text=msg))

@@ -1,7 +1,6 @@
 import requests
 import random
 import math
-
 from datetime import datetime, timedelta
 from flask import request, abort, render_template
 from linebot import LineBotApi, WebhookHandler
@@ -15,19 +14,11 @@ from linebot.models import ButtonsTemplate, ConfirmTemplate
 from linebot.models import DatetimePickerTemplateAction, PostbackEvent
 from urllib.parse import parse_qsl
 from model import Cycle, Cotton, PredictDate, Name, db
-from flask import Flask
 from settings import Setting
+from app import app
 
 setting = Setting()
 
-app = Flask(__name__)
-
-# 資料庫設定
-db_url = setting.database_url
-if db_url.startswith("postgres://"):
-    db_url = db_url.replace("postgres://", "postgresql://", 1)
-app.config['SQLALCHEMY_DATABASE_URI'] = db_url
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 db.init_app(app)
 
 line_bot_api = LineBotApi(setting.channel_token)
