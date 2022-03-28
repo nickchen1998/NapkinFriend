@@ -48,3 +48,7 @@ def get_data():
                 msg += f"{cotton_message}"
 
                 line_bot_api.push_message(to=_predict_date.user_id, messages=TextSendMessage(text=msg))
+
+
+if __name__ == '__main__':
+    get_data()
