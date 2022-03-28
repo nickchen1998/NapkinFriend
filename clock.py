@@ -29,7 +29,7 @@ def get_data():
                 today = datetime.utcnow() + timedelta(hours=8)
                 calculate_day = today.replace(tzinfo=None) - _item.predict_date.replace(tzinfo=None)
 
-                if 32 > calculate_day.days > 0:
+                if 32 > abs(calculate_day.days) > 0:
                     save_message = "棉棉庫存量足夠"
                     danger_message = "以下種類的棉棉可能不足："
 
