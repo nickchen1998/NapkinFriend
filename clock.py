@@ -1,109 +1,50 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat May  1 10:00:39 2021
-
-@author: nick
-"""
-
 from flask import Flask
 from linebot import LineBotApi, WebhookHandler
 from linebot.models import TextSendMessage
-from flask_sqlalchemy import SQLAlchemy
-import datetime, urllib3
-from apscheduler.schedulers.blocking import BlockingScheduler
+from settings import Setting
+from model import Cotton, PredictDate, Name, db
+from datetime import datetime
+import pytz
 
-
-#line bot 的 channel token
-line_bot_api = LineBotApi('')
-#line bot 的 channel secret
-handler = WebhookHandler('')
-sched = BlockingScheduler()
+setting = Setting()
+line_bot_api = LineBotApi(setting.channel_token)
+handler = WebhookHandler(setting.channel_secret)
 app = Flask(__name__)
 
-#資料庫設定
-uri = ""  # or other relevant config var
-if uri.startswith("postgres://"):
-    uri = uri.replace("postgres://", "postgresql://", 1)
-app.config['SQLALCHEMY_DATABASE_URI']= uri
-#app.config['DATABASE_URL']=uri
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS']=True
-db=SQLAlchemy(app)
+# 資料庫設定
+db_url = setting.database_url
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+db.init_app(app)
 
 
+def get_data():
+    predict_dates = PredictDate.query.all()
+    if predict_dates:
+        for _predict_date in predict_dates:
+            name = Name.query.filter_by(user_id=_predict_date.user_id).first()
 
+            timezone = pytz.timezone("Asia/Taipei")
+            today = timezone.localize(datetime.today())
 
+            calculate_day = today - _predict_date.predict_date
 
-@sched.scheduled_job('interval', days=1, start_date='2021-05-04 08:00:00', timezone='Asia/Taipei')
-def scheduled_job():
-    #撈取預測日
-    sql = "SELECT * FROM predictdate "
-    result = db.engine.execute(sql)
-    id_list = []
-    predictdate_list = []
-    for data in result:
-         id_list.append(data['userid'])
-         predictdate_list.append(data['predictdate'])
-    
-    #每日進行一次全部人距離預測日的運算
-    for i in range(len(predictdate_list)):
-        x = predictdate_list[i].split('-')
-        y = datetime.date(int(x[0]), int(x[1]), int(x[2]))
-        today = datetime.date.today()
-        c = int(str(today - y)[:3])
-        if c < 0:
-            c = -c
+            if 32 > calculate_day > 0:
+                save_message = "棉棉庫存量足夠"
+                danger_message = "以下種類的棉棉可能不足："
 
-        #撈取名字
-        sql = "SELECT * FROM name WHERE userid = '%s'" %(id_list[i])
-        name_result = db.engine.execute(sql)
-        name = ''
-        for data in name_result:
-            name = data['name']
-       
-        #判斷神麼時候提醒
-        if c < 32:
-            #獲取ID
-            to = id_list[i]
-            
-            #撈取衛生棉庫存
-            sql = "SELECT * FROM cotton WHERE userid = '%s'"%(to)
-            result = db.engine.execute(sql)
-            cotton_category_list = ['輕薄護墊', '日用量少', '日用正常', '日用量多', '夜用正常', '夜用量多']
-            cotton_sotre_list = []
-            for data in result:
-                cotton_sotre_list.append(data['pad'])
-                cotton_sotre_list.append(data['ldailyuse'])
-                cotton_sotre_list.append(data['ndailyuse'])
-                cotton_sotre_list.append(data['hdailyuse'])
-                cotton_sotre_list.append(data['nnightuse'])
-                cotton_sotre_list.append(data['hnightuse'])
-            
-            #開始進行判別安全存量
-            save_store = 10
-            save_flag = True
-            save_message = '棉棉存量足夠'
-            unsave_message = '以下種類的棉棉可能不足：'
-            final_send_message = ''
-            for i in range(len(cotton_sotre_list)):
-                if int(cotton_sotre_list[i]) < save_store:
-                    save_flag = False
-                    unsave_message += '\n' + cotton_category_list[i] + "剩餘 " + cotton_sotre_list[i] + ' 片'
-            
-            if save_flag == True:
-                final_send_message = save_message
-            else:
-                final_send_message = unsave_message
-            
-            msg = ""
-            msg += "親愛的" + name + " 您好: " + "\n"
-            msg += "您的生理期預計於 " + str(c) + " 天之內到來" + '\n'
-            msg += final_send_message
-            line_bot_api.push_message(to, TextSendMessage(text=msg))
+                # 讀取衛生棉存量，並判斷安全存量
+                db_cotton: Cotton = Cotton.query.filter_by(user_id=_predict_date.user_id).first()
+                for key, value in db_cotton.to_dict().items():
+                    if value < 10:
+                        danger_message += f"\n {key} 剩餘 {value} 片"
 
-@sched.scheduled_job('interval',  minutes=20, start_date='2021-05-03 10:50:00', timezone='Asia/Taipei')
-def d_scheduled_job():
-    http = urllib3.PoolManager()
-    r = http.request('GET', "https://cotton-line-bot-via2.herokuapp.com/")
-    r.status
+                cotton_message = save_message if danger_message is '以下種類的棉棉可能不足：' else danger_message
 
-sched.start()
+                msg = f"親愛的 {name.name} 您好\n"
+                msg += f"您的生理期預計於 {calculate_day} 內到來 \n"
+                msg += f"{cotton_message}"
+
+                line_bot_api.push_message(to=_predict_date.user_id, messages=TextSendMessage(text=msg))

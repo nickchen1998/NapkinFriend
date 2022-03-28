@@ -26,6 +26,9 @@ class Cotton(db.Model):
         self.normal_night = normal_night
         self.high_night = high_night
 
+    def to_dict(self) -> dict:
+        return {c.name: getattr(self, c.name, None) for c in self.__table__.columns}
+
 
 class Cycle(db.Model):
     __tablename__ = "cycle"
