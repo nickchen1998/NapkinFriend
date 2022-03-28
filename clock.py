@@ -41,7 +41,7 @@ def get_data():
                     if value < 10:
                         danger_message += f"\n {key} 剩餘 {value} 片"
 
-                cotton_message = save_message if danger_message is '以下種類的棉棉可能不足：' else danger_message
+                cotton_message = save_message if danger_message == '以下種類的棉棉可能不足：' else danger_message
 
                 msg = f"親愛的 {name.name} 您好\n"
                 msg += f"您的生理期預計於 {calculate_day} 內到來 \n"
