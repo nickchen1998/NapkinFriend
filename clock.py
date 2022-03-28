@@ -35,9 +35,13 @@ def get_data():
 
                     # 讀取衛生棉存量，並判斷安全存量
                     db_cotton: Cotton = Cotton.query.filter_by(user_id=_item.user_id).first()
-                    for key, value in db_cotton.to_dict().items():
-                        if value < 10:
-                            danger_message += f"\n {key} 剩餘 {value} 片"
+                    category = ["護墊", "日用量少", "日用正常", "日用量多", "夜用正常", "夜用量多"]
+                    amount = [db_cotton.pad, db_cotton.little_daily, db_cotton.normal_daily,
+                              db_cotton.high_daily, db_cotton.normal_night, db_cotton.high_night]
+
+                    for _category, _amount in zip(category, amount):
+                        if _amount < 10:
+                            danger_message += f"\n {_category} 剩餘 {_amount} 片"
 
                     cotton_message = save_message if danger_message == '以下種類的棉棉可能不足：' else danger_message
 
