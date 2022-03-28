@@ -29,6 +29,7 @@ def get_data():
 
                 timezone = pytz.timezone("Asia/Taipei")
                 today = timezone.localize(datetime.today())
+                today.replace(tzinfo=None)
 
                 calculate_day = today - _predict_date.predict_date
 
