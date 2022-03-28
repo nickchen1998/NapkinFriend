@@ -3,7 +3,7 @@ from linebot import LineBotApi, WebhookHandler
 from linebot.models import TextSendMessage
 from settings import Setting
 from model import Cotton, PredictDate, Name, db
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 
 setting = Setting()
@@ -27,9 +27,9 @@ def get_data():
             for _predict_date in predict_dates:
                 name = Name.query.filter_by(user_id=_predict_date.user_id).first()
 
-                timezone = pytz.timezone("Asia/Taipei")
-                today = timezone.localize(datetime.today())
-                today.replace(tzinfo=None)
+                today = datetime.today()
+                print(today)
+                print(today + timedelta(hours=8))
 
                 calculate_day = today - _predict_date.predict_date
 
