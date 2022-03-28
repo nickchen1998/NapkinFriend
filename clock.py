@@ -4,7 +4,6 @@ from linebot.models import TextSendMessage
 from settings import Setting
 from model import Cotton, PredictDate, Name, db
 from datetime import datetime, timedelta
-import pytz
 
 setting = Setting()
 line_bot_api = LineBotApi(setting.channel_token)
@@ -24,21 +23,18 @@ def get_data():
     with app.app_context():
         predict_dates = PredictDate.query.all()
         if predict_dates:
-            for _predict_date in predict_dates:
-                name = Name.query.filter_by(user_id=_predict_date.user_id).first()
+            for _item in predict_dates:
+                name = Name.query.filter_by(user_id=_item.user_id).first()
 
-                today = datetime.today()
-                print(today)
-                print(today + timedelta(hours=8))
+                today = datetime.utcnow() + timedelta(hours=8)
+                calculate_day = today.replace(tzinfo=None) - _item.predict_date.replace(tzinfo=None)
 
-                calculate_day = today - _predict_date.predict_date
-
-                if 32 > calculate_day > 0:
+                if 32 > calculate_day.days > 0:
                     save_message = "棉棉庫存量足夠"
                     danger_message = "以下種類的棉棉可能不足："
 
                     # 讀取衛生棉存量，並判斷安全存量
-                    db_cotton: Cotton = Cotton.query.filter_by(user_id=_predict_date.user_id).first()
+                    db_cotton: Cotton = Cotton.query.filter_by(user_id=_item.user_id).first()
                     for key, value in db_cotton.to_dict().items():
                         if value < 10:
                             danger_message += f"\n {key} 剩餘 {value} 片"
@@ -49,7 +45,7 @@ def get_data():
                     msg += f"您的生理期預計於 {calculate_day} 內到來 \n"
                     msg += f"{cotton_message}"
 
-                    line_bot_api.push_message(to=_predict_date.user_id, messages=TextSendMessage(text=msg))
+                    line_bot_api.push_message(to=_item.user_id, messages=TextSendMessage(text=msg))
 
 
 if __name__ == '__main__':

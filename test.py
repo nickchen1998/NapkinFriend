@@ -1,6 +1,6 @@
 import datetime
 
-first = datetime.datetime(year=2022, month=3, day=1)
+first = datetime.datetime.utcnow()
 second = datetime.datetime(year=2022, month=3, day=2)
 
 result = first - second
