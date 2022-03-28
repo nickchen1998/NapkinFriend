@@ -37,6 +37,9 @@
             <label>請輸入 夜用量多 剩餘數量 (單位:片):</label>
             <input type="number" inputmode='decimal' id="Hnightuse" class="form-control" />
             <br />
+            <label>請輸入安全存量 (預設為 10 片):</label>
+            <input type="number" inputmode='decimal' id="saveAmount" class="form-control" />
+            <br />
             <button class="btn btn-success btn-block" id="sure" style="background-color: #F77885">確定</button>
         </div>
     </div>
@@ -47,11 +50,14 @@
             liff.init({liffId: myLiffId });
         }
 
-		function pushMsg(pname, pdatatime, pcycle, pPad, pLdailyuse, pNdailyuse, pHdailyuse, pNnightuse, pHnightuse) {
+		function pushMsg(pname, pdatatime, pcycle, pPad, pLdailyuse, pNdailyuse, pHdailyuse, pNnightuse, pHnightuse, saveAmount) {
 			if (pname == '' || pdatatime == '' || pcycle == ''|| pPad == ''|| pLdailyuse == ''|| pNdailyuse == ''|| pHdailyuse == ''|| pNnightuse == ''|| pHnightuse == '') {  //資料檢查
 				alert('每個項目都必須輸入！');
 			 	return;
 			}
+            if (saveAmount == "" || saveAmount == 0) {
+                saveAmount = 10
+            }
 			var msg = "###";  //回傳訊息字串
 			msg = msg + pname + "/";
 			msg = msg + pdatatime + "/";
@@ -61,7 +67,8 @@
 			msg = msg + pNdailyuse+ "/";
 			msg = msg + pHdailyuse+ "/";
 			msg = msg + pNnightuse+ "/";
-			msg = msg + pHnightuse;	
+			msg = msg + pHnightuse+ "/";
+            msg = msg + String(saveAmount);
 			liff.sendMessages([  //推播訊息
 				{ type: 'text',
 				  text: msg
@@ -75,7 +82,9 @@
 		$(document).ready(function () {
 			initializeLiff('{{ liffid }}');  //接收傳遞的 liffid 參數
 			$('#sure').click(function (e) {  //按下確定鈕
-				pushMsg($('#name').val(), $('#datetime').val(), $('#cycle').val(), $('#Pad').val(), $('#Ldailyuse').val(), $('#Ndailyuse').val(), $('#Hdailyuse').val(), $('#Nnightuse').val(), $('#Hnightuse').val());
+				pushMsg($('#name').val(), $('#datetime').val(), $('#cycle').val(), $('#Pad').val(),
+                    $('#Ldailyuse').val(), $('#Ndailyuse').val(), $('#Hdailyuse').val(), $('#Nnightuse').val(),
+                    $('#Hnightuse').val(), $("#saveAmount").val());
 			});
 		});
 	</script>

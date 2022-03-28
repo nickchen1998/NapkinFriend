@@ -33,13 +33,13 @@ def get_data():
                               db_cotton.high_daily, db_cotton.normal_night, db_cotton.high_night]
 
                     for _category, _amount in zip(category, amount):
-                        if _amount < 10:
+                        if _amount < db_cotton.save_amount:
                             danger_message += f"\n {_category} 剩餘 {_amount} 片"
 
                     cotton_message = save_message if danger_message == '以下種類的棉棉可能不足：' else danger_message
 
                     msg = f"親愛的 {name.name} 您好\n"
-                    msg += f"您的生理期預計於 {abs(calculate_day.days)} 內到來 \n"
+                    msg += f"您的生理期預計於 {abs(calculate_day.days)} 天內到來 \n"
                     msg += f"{cotton_message}"
 
                     line_bot_api.push_message(to=_item.user_id, messages=TextSendMessage(text=msg))

@@ -340,7 +340,7 @@ def select_cotton(event):
 # 衛生棉庫存查詢
 def query_cotton(event, user_id):
     try:
-        result = Cotton.query.filter_by(user_id=user_id).first()
+        result: Cotton = Cotton.query.filter_by(user_id=user_id).first()
         if result:
             text = ""
             text += "你的棉棉庫存  (✪ω✪) " + "\n"
@@ -349,7 +349,8 @@ def query_cotton(event, user_id):
             text += f"日用正常 : {result.normal_daily} 片" + "\n"
             text += f"日用量多 : {result.high_daily} 片" + "\n"
             text += f"夜用正常 : {result.normal_night} 片" + "\n"
-            text += f"夜用量多 : {result.high_night} 片"
+            text += f"夜用量多 : {result.high_night} 片" + "\n"
+            text += f"目前安全存量設定為 : {result.save_amount}"
         else:
             text = "似乎還沒有您的資料，請使用首次設定進行設定"
 
@@ -375,6 +376,9 @@ def update_cotton(event, mtext, user_id):
             db_cotton.high_daily += flist[3]
             db_cotton.normal_night += flist[4]
             db_cotton.high_night += flist[5]
+
+            if flist[6] != 0:
+                db_cotton.save_amount = flist[6]
 
             db.session.commit()
 
@@ -407,6 +411,7 @@ def first_time_set(event, mtext, user_id):
         text1 += '剩餘 日用量多 庫存：' + str(flist[6]) + '\n'
         text1 += '剩餘 夜用正常 庫存：' + str(flist[7]) + '\n'
         text1 += '剩餘 夜用量多 庫存：' + str(flist[8]) + '\n'
+        text1 += "安全存量為：" + str(flist[9]) + '\n'
         text1 += '親愛的 : ' + str(flist[0]) + " 已紀錄您的資料"
 
         # 計算預測日
@@ -423,7 +428,8 @@ def first_time_set(event, mtext, user_id):
 
         # 將庫存寫進庫存資料表
         db_cotton = Cotton(user_id=user_id, pad=int(flist[3]), little_daily=int(flist[4]), normal_daily=int(flist[5]),
-                           high_daily=int(flist[6]), normal_night=int(flist[7]), high_night=int(flist[8]))
+                           high_daily=int(flist[6]), normal_night=int(flist[7]), high_night=int(flist[8]),
+                           save_amount=int(flist[9]))
         db.session.add(db_cotton)
 
         # 將姓名寫進姓名資料表
