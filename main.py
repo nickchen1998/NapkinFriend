@@ -512,7 +512,7 @@ def find_store(event, latitude, longitude, mtext):
     _columns = []
 
     # 擷取所需資料，並存入 list 當中
-    for i in range(3):
+    for i in range(5):
         _name = json_result['results'][i]['name']
         _place_id = json_result['results'][i]['place_id']
         _address = json_result['results'][i]['vicinity']
