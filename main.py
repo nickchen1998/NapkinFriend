@@ -509,131 +509,51 @@ def find_store(event, latitude, longitude, mtext):
                                                                                           mtext)
     search_url_result = requests.get(search_url)
     json_result = search_url_result.json()
-
-    name_result_list = []
-    place_id_result_list = []
-    address_result_list = []
-    latitude_result_list = []
-    longitude_result_list = []
-    rate_result_list = []
-    photo_url_list = []
-    map_url_list = []
-    distance_list = []
+    _columns = []
 
     # 擷取所需資料，並存入 list 當中
     for i in range(3):
-        name_result_list.append(json_result['results'][i]['name'])
-        place_id_result_list.append(json_result['results'][i]['place_id'])
-        address_result_list.append(json_result['results'][i]['vicinity'])
-        latitude_result_list.append(float(json_result['results'][i]['geometry']['location']['lat']))
-        longitude_result_list.append(float(json_result['results'][i]['geometry']['location']['lng']))
-        rate_result_list.append(float(json_result['results'][i]['rating']))
+        _name = json_result['results'][i]['name']
+        _place_id = json_result['results'][i]['place_id']
+        _address = json_result['results'][i]['vicinity']
+        _latitude = float(json_result['results'][i]['geometry']['location']['lat'])
+        _longitude = float(json_result['results'][i]['geometry']['location']['lng'])
+        _rate = float(json_result['results'][i]['rating'])
+
         # 製造用於查詢 google map 的語法
         # 語法來源參考:https://www.tpisoftware.com/tpu/articleDetails/1136
-        map_url_list.append(
-            "https://www.google.com/maps/search/?api=1&query={},{}&query_place_id={}".format(latitude_result_list[i],
-                                                                                             longitude_result_list[i],
-                                                                                             place_id_result_list[i]))
+        _url = "https://www.google.com/maps/search/?api=1&query={},{}&query_place_id={}".format(_latitude,
+                                                                                                _longitude,
+                                                                                                _place_id)
 
         # 製造用於查詢 google map 當中店家截圖的語法
         # 切記不能塞NONE進去網址連結，若沒有預設圖片，須自己製作OR隨意指定
         if 'photos' not in json_result['results'][i]:
-            photo_url_list.append(
-                'https://images.pexels.com/photos/7774217/'
-                'pexels-photo-7774217.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940')
+            _photo_url = 'https://images.pexels.com/photos/7774217/' \
+                         'pexels-photo-7774217.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940'
         else:
             photo_ref = json_result['results'][i]['photos'][0]['photo_reference']  # 圖片參考 ID
             photo_width = json_result['results'][i]['photos'][0]['width']  # 圖片寬度
             # 語法來源參考: https://www.tpisoftware.com/tpu/articleDetails/1136
-            photo_url_list.append(
-                'https://maps.googleapis.com/maps/api/place/photo?'
-                'key={}&photoreference={}&maxwidth={}'.format(setting.google_map_key,
-                                                              photo_ref,
-                                                              photo_width))
+            _photo_url = 'https://maps.googleapis.com/maps/api/place/photo?' \
+                         'key={}&photoreference={}&maxwidth={}'.format(setting.google_map_key, photo_ref, photo_width)
 
-        distance = math.sqrt(
-            ((latitude - latitude_result_list[i]) ** 2) + ((longitude - longitude_result_list[i]) ** 2))
-        distance_list.append(distance)
+        _distance = math.sqrt(((latitude - _latitude) ** 2) + ((longitude - _longitude) ** 2))
 
-    # 於機器人中使用旋轉樣板來顯示推薦店家
-    # 萃取前三筆資料
-    a1 = photo_url_list[0]
-    b1 = name_result_list[0]
-    c1 = rate_result_list[0]
-    d1 = map_url_list[0]
-    e1 = address_result_list[0]
-    dist1 = float(distance_list[0]) * 111
+        _text = f'評價 : {_rate}' + '\n'
+        _text += f'距離 : {round(_distance, 2)} 公里' + '\n'
+        _text += f'地址: {_address}'
 
-    a2 = photo_url_list[1]
-    b2 = name_result_list[1]
-    c2 = rate_result_list[1]
-    d2 = map_url_list[1]
-    e2 = address_result_list[1]
-    dist2 = float(distance_list[1]) * 111
-
-    a3 = photo_url_list[2]
-    b3 = name_result_list[2]
-    c3 = rate_result_list[2]
-    d3 = map_url_list[2]
-    e3 = address_result_list[2]
-    dist3 = float(distance_list[2]) * 111
-
-    text1 = '評價 : %s' % c1 + '\n'
-    text1 += '距離 : %.2f 公里' % dist1 + '\n'
-    text1 += '地址: %s' % e1
-
-    text2 = '評價 : %s' % c2 + '\n'
-    text2 += '距離 : %.2f 公里' % dist2 + '\n'
-    text2 += '地址: %s' % e2
-
-    text3 = '評價 : %s' % c3 + '\n'
-    text3 += '距離 : %.2f 公里' % dist3 + '\n'
-    text3 += '地址: %s' % e3
+        carouse_column = CarouselColumn(thumbnail_image_url=_photo_url,
+                                        title=_name,
+                                        text=_text,
+                                        actions=[URITemplateAction(label="查看地圖", uri=_url)])
+        _columns.append(carouse_column)
 
     # 旋轉樣板主體
     try:
-        messages = TemplateSendMessage(
-            alt_text='推薦附近店家',
-            template=CarouselTemplate(
-                columns=[
-                    # 第一間
-                    CarouselColumn(
-                        thumbnail_image_url=a1,
-                        title=b1,
-                        text=text1,
-                        actions=[
-                            URITemplateAction(
-                                label="查看地圖",
-                                uri=d1
-                            )
-                        ]
-                    ),
-                    CarouselColumn(
-                        thumbnail_image_url=a2,
-                        title=b2,
-                        text=text2,
-                        actions=[
-                            URITemplateAction(
-                                label="查看地圖",
-                                uri=d2
-                            )
-                        ]
-                    ),
-                    CarouselColumn(
-                        thumbnail_image_url=a3,
-                        title=b3,
-                        text=text3,
-                        actions=[
-                            URITemplateAction(
-                                label="查看地圖",
-                                uri=d3
-                            )
-                        ]
-                    )
-
-                ]
-            )
-        )
+        messages = TemplateSendMessage(alt_text='推薦附近店家',
+                                       template=CarouselTemplate(columns=_columns))
         line_bot_api.reply_message(event.reply_token, messages)
     except Exception as exc:
         print(str(exc))
