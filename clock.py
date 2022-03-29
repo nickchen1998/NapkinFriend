@@ -20,9 +20,9 @@ def get_data():
                 name = Name.query.filter_by(user_id=_item.user_id).first()
 
                 today = datetime.utcnow() + timedelta(hours=8)
-                calculate_day = today.replace(tzinfo=None) - _item.predict_date.replace(tzinfo=None)
+                calculate_day = _item.predict_date.replace(tzinfo=None) - today.replace(tzinfo=None)
 
-                if 32 > abs(calculate_day.days) > 0:
+                if 5 > calculate_day.days > 0:
                     save_message = "棉棉庫存量足夠"
                     danger_message = "以下種類的棉棉可能不足："
 
