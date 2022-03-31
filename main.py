@@ -508,6 +508,7 @@ def find_store(event, latitude, longitude, mtext):
                                                                                           longitude,
                                                                                           mtext)
     search_url_result = requests.get(search_url)
+    print(search_url_result)
     json_result = search_url_result.json()
     _columns = []
 
