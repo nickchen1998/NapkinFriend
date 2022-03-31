@@ -508,11 +508,10 @@ def find_store(event, latitude, longitude, mtext):
                                                                                           longitude,
                                                                                           mtext)
     search_url_result = requests.get(search_url)
-    print(search_url_result)
-    json_result = search_url_result.json()
-    _columns = []
+    json_result: dict = search_url_result.json()
 
-    if json_result["results"]:
+    if json_result.get("result") and json_result.get("status") != "ZERO_RESULTS":
+        _columns = []
         flag = 0
         # 擷取所需資料，並存入 list 當中
         for i in range(len(json_result)):
@@ -543,7 +542,9 @@ def find_store(event, latitude, longitude, mtext):
                 photo_width = json_result['results'][i]['photos'][0]['width']  # 圖片寬度
                 # 語法來源參考: https://www.tpisoftware.com/tpu/articleDetails/1136
                 _photo_url = 'https://maps.googleapis.com/maps/api/place/photo?' \
-                             'key={}&photoreference={}&maxwidth={}'.format(setting.google_map_key, photo_ref, photo_width)
+                             'key={}&photoreference={}&maxwidth={}'.format(setting.google_map_key,
+                                                                           photo_ref,
+                                                                           photo_width)
 
             _distance = calculate_distance(lon1=longitude, lat1=latitude, lon2=_longitude, lat2=_latitude)
 
