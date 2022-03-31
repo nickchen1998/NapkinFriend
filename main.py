@@ -511,50 +511,57 @@ def find_store(event, latitude, longitude, mtext):
     json_result = search_url_result.json()
     _columns = []
 
-    # 擷取所需資料，並存入 list 當中
-    for i in range(5):
-        _name = json_result['results'][i]['name']
-        _place_id = json_result['results'][i]['place_id']
-        _address = json_result['results'][i]['vicinity']
-        _latitude = float(json_result['results'][i]['geometry']['location']['lat'])
-        _longitude = float(json_result['results'][i]['geometry']['location']['lng'])
-        _rate = float(json_result['results'][i]['rating'])
+    if json_result:
+        flag = 0
+        # 擷取所需資料，並存入 list 當中
+        for i in range(len(json_result)):
+            flag += 1
+            if flag > 5:
+                break
 
-        # 製造用於查詢 google map 的語法
-        # 語法來源參考:https://www.tpisoftware.com/tpu/articleDetails/1136
-        _url = "https://www.google.com/maps/search/?api=1&query={},{}&query_place_id={}".format(_latitude,
-                                                                                                _longitude,
-                                                                                                _place_id)
+            _name = json_result['results'][i]['name']
+            _place_id = json_result['results'][i]['place_id']
+            _address = json_result['results'][i]['vicinity']
+            _latitude = float(json_result['results'][i]['geometry']['location']['lat'])
+            _longitude = float(json_result['results'][i]['geometry']['location']['lng'])
+            _rate = float(json_result['results'][i]['rating'])
 
-        # 製造用於查詢 google map 當中店家截圖的語法
-        # 切記不能塞NONE進去網址連結，若沒有預設圖片，須自己製作OR隨意指定
-        if 'photos' not in json_result['results'][i]:
-            _photo_url = 'https://images.pexels.com/photos/7774217/' \
-                         'pexels-photo-7774217.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940'
-        else:
-            photo_ref = json_result['results'][i]['photos'][0]['photo_reference']  # 圖片參考 ID
-            photo_width = json_result['results'][i]['photos'][0]['width']  # 圖片寬度
-            # 語法來源參考: https://www.tpisoftware.com/tpu/articleDetails/1136
-            _photo_url = 'https://maps.googleapis.com/maps/api/place/photo?' \
-                         'key={}&photoreference={}&maxwidth={}'.format(setting.google_map_key, photo_ref, photo_width)
+            # 製造用於查詢 google map 的語法
+            # 語法來源參考:https://www.tpisoftware.com/tpu/articleDetails/1136
+            _url = "https://www.google.com/maps/search/?api=1&query={},{}&query_place_id={}".format(_latitude,
+                                                                                                    _longitude,
+                                                                                                    _place_id)
 
-        _distance = calculate_distance(lon1=longitude, lat1=latitude, lon2=_longitude, lat2=_latitude)
+            # 製造用於查詢 google map 當中店家截圖的語法
+            # 切記不能塞NONE進去網址連結，若沒有預設圖片，須自己製作OR隨意指定
+            if 'photos' not in json_result['results'][i]:
+                _photo_url = 'https://images.pexels.com/photos/7774217/' \
+                             'pexels-photo-7774217.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940'
+            else:
+                photo_ref = json_result['results'][i]['photos'][0]['photo_reference']  # 圖片參考 ID
+                photo_width = json_result['results'][i]['photos'][0]['width']  # 圖片寬度
+                # 語法來源參考: https://www.tpisoftware.com/tpu/articleDetails/1136
+                _photo_url = 'https://maps.googleapis.com/maps/api/place/photo?' \
+                             'key={}&photoreference={}&maxwidth={}'.format(setting.google_map_key, photo_ref, photo_width)
 
-        _text = f'評價 : {_rate}' + '\n'
-        _text += f'距離 : {round(_distance, 2)} 公里' + '\n'
-        _text += f'地址: {_address}'
+            _distance = calculate_distance(lon1=longitude, lat1=latitude, lon2=_longitude, lat2=_latitude)
 
-        carouse_column = CarouselColumn(thumbnail_image_url=_photo_url,
-                                        title=_name,
-                                        text=_text,
-                                        actions=[URITemplateAction(label="查看地圖", uri=_url)])
-        _columns.append(carouse_column)
+            _text = f'評價 : {_rate}' + '\n'
+            _text += f'距離 : {round(_distance, 2)} 公里' + '\n'
+            _text += f'地址: {_address}'
 
+            carouse_column = CarouselColumn(thumbnail_image_url=_photo_url,
+                                            title=_name,
+                                            text=_text,
+                                            actions=[URITemplateAction(label="查看地圖", uri=_url)])
+            _columns.append(carouse_column)
+
+        message = TemplateSendMessage(alt_text='推薦附近店家', template=CarouselTemplate(columns=_columns))
+    else:
+        message = "您附近沒有指定類別的店家"
     # 旋轉樣板主體
     try:
-        messages = TemplateSendMessage(alt_text='推薦附近店家',
-                                       template=CarouselTemplate(columns=_columns))
-        line_bot_api.reply_message(event.reply_token, messages)
+        line_bot_api.reply_message(event.reply_token, message)
     except Exception as exc:
         print(str(exc))
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='查找店家發生錯誤！'))
@@ -587,7 +594,7 @@ def calculate_distance(lon1, lat1, lon2, lat2):
     a = sin(d_lat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(d_lon / 2) ** 2
     c = 2 * asin(sqrt(a))
     r = 6371
-    return c * r
+    return c * r  # 參考來源上最後有 * 1000 ，那調才會變成公里
 
 
 if __name__ == '__main__':
