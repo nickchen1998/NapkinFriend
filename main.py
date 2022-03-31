@@ -511,7 +511,7 @@ def find_store(event, latitude, longitude, mtext):
     json_result = search_url_result.json()
     _columns = []
 
-    if json_result:
+    if json_result["results"]:
         flag = 0
         # 擷取所需資料，並存入 list 當中
         for i in range(len(json_result)):
