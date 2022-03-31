@@ -587,7 +587,7 @@ def calculate_distance(lon1, lat1, lon2, lat2):
     a = sin(d_lat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(d_lon / 2) ** 2
     c = 2 * asin(sqrt(a))
     r = 6371
-    return c * r * 1000 / 100
+    return c * r
 
 
 if __name__ == '__main__':
