@@ -500,31 +500,33 @@ def delete_data(event, user_id):
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='刪除資料發生錯誤！'))
 
 
-def find_store(event, latitude, longitude, mtext):
+def find_store(event, latitude, longitude, keyword):
     # 建立 list 來存取萃取出的店家資料
-    search_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?" \
-                 "key={}&location={},{}&rankby=distance&keyword={}&language=zh-TW".format(setting.google_map_key,
-                                                                                          latitude,
-                                                                                          longitude,
-                                                                                          mtext)
+    base_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+    search_url = "{}?key={}&location={},{}&rankby=distance&keyword={}&language=zh-TW".format(base_url,
+                                                                                             setting.google_map_key,
+                                                                                             latitude,
+                                                                                             longitude,
+                                                                                             keyword)
     search_url_result = requests.get(search_url)
     json_result: dict = search_url_result.json()
 
-    if json_result.get("result") and json_result.get("status") != "ZERO_RESULTS":
+    if json_result["results"]:
+        _result = json_result["results"]
         _columns = []
         flag = 0
         # 擷取所需資料，並存入 list 當中
-        for i in range(len(json_result)):
+        for i in range(len(_result)):
             flag += 1
             if flag > 5:
                 break
 
-            _name = json_result['results'][i]['name']
-            _place_id = json_result['results'][i]['place_id']
-            _address = json_result['results'][i]['vicinity']
-            _latitude = float(json_result['results'][i]['geometry']['location']['lat'])
-            _longitude = float(json_result['results'][i]['geometry']['location']['lng'])
-            _rate = float(json_result['results'][i]['rating'])
+            _name = _result[i]['name']
+            _place_id = _result[i]['place_id']
+            _address = _result[i]['vicinity']
+            _latitude = float(_result[i]['geometry']['location']['lat'])
+            _longitude = float(_result[i]['geometry']['location']['lng'])
+            _rate = float(_result[i]['rating'])
 
             # 製造用於查詢 google map 的語法
             # 語法來源參考:https://www.tpisoftware.com/tpu/articleDetails/1136
@@ -534,12 +536,12 @@ def find_store(event, latitude, longitude, mtext):
 
             # 製造用於查詢 google map 當中店家截圖的語法
             # 切記不能塞NONE進去網址連結，若沒有預設圖片，須自己製作OR隨意指定
-            if 'photos' not in json_result['results'][i]:
+            if 'photos' not in _result[i]:
                 _photo_url = 'https://images.pexels.com/photos/7774217/' \
                              'pexels-photo-7774217.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940'
             else:
-                photo_ref = json_result['results'][i]['photos'][0]['photo_reference']  # 圖片參考 ID
-                photo_width = json_result['results'][i]['photos'][0]['width']  # 圖片寬度
+                photo_ref = _result[i]['photos'][0]['photo_reference']  # 圖片參考 ID
+                photo_width = _result[i]['photos'][0]['width']  # 圖片寬度
                 # 語法來源參考: https://www.tpisoftware.com/tpu/articleDetails/1136
                 _photo_url = 'https://maps.googleapis.com/maps/api/place/photo?' \
                              'key={}&photoreference={}&maxwidth={}'.format(setting.google_map_key,
