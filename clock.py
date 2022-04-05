@@ -44,6 +44,10 @@ def get_data():
 
                     line_bot_api.push_message(to=_item.user_id, messages=TextSendMessage(text=msg))
 
+                elif 0 > calculate_day.days > -5:
+                    text = f"您的生理期可能已經開始，預測日為 {_item.predict_date.strftime('%Y-%m-%d')}"
+                    line_bot_api.push_message(to=_item.user_id, messages=TextSendMessage(text=text))
+
 
 if __name__ == '__main__':
     get_data()
