@@ -1,6 +1,5 @@
 import requests
 import random
-from math import radians, cos, sin, asin, sqrt
 from datetime import datetime, timedelta
 from flask import request, abort, render_template
 from linebot import LineBotApi, WebhookHandler
@@ -548,10 +547,7 @@ def find_store(event, latitude, longitude, keyword):
                                                                            photo_ref,
                                                                            photo_width)
 
-            _distance = calculate_distance(lon1=longitude, lat1=latitude, lon2=_longitude, lat2=_latitude)
-
             _text = f'評價 : {_rate}' + '\n'
-            _text += f'距離 : {round(_distance, 2)} 公里' + '\n'
             _text += f'地址: {_address}'
 
             carouse_column = CarouselColumn(thumbnail_image_url=_photo_url,
@@ -586,19 +582,6 @@ def delete_data_confirm_template(event):  # 按鈕樣版
         )
     )
     line_bot_api.reply_message(event.reply_token, message)
-
-
-# 用經緯度計算距離
-# 參考網址: https://blog.csdn.net/vernice/article/details/46581361
-def calculate_distance(lon1, lat1, lon2, lat2):
-    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
-
-    d_lon = lon2 - lon1
-    d_lat = lat2 - lat1
-    a = sin(d_lat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(d_lon / 2) ** 2
-    c = 2 * asin(sqrt(a))
-    r = 6371
-    return c * r  # 參考來源上最後有 * 1000 ，那調才會變成公里
 
 
 if __name__ == '__main__':
