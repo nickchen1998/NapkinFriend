@@ -11,25 +11,25 @@
 <div class="row" style="margin: 10px">
     <div class="col-12" style="margin: 10px">
         <label>請輸入 輕薄護墊 剩餘數量 (單位:片):</label>
-        <input type="number" inputmode='decimal' id="Pad" class="form-control"/>
+        <label for="Pad"></label><input type="number" inputmode='decimal' id="Pad" class="form-control"/>
         <br/>
         <label>請輸入 日用量少 剩餘數量 (單位:片):</label>
-        <input type="number" inputmode='decimal' id="Ldailyuse" class="form-control"/>
+        <label for="Ldailyuse"></label><input type="number" inputmode='decimal' id="Ldailyuse" class="form-control"/>
         <br/>
         <label>請輸入 日用正常 剩餘數量 (單位:片):</label>
-        <input type="number" inputmode='decimal' id="Ndailyuse" class="form-control"/>
+        <label for="Ndailyuse"></label><input type="number" inputmode='decimal' id="Ndailyuse" class="form-control"/>
         <br/>
         <label>請輸入 日用量多 剩餘數量 (單位:片):</label>
-        <input type="number" inputmode='decimal' id="Hdailyuse" class="form-control"/>
+        <label for="Hdailyuse"></label><input type="number" inputmode='decimal' id="Hdailyuse" class="form-control"/>
         <br/>
         <label>請輸入 夜用正常 剩餘數量 (單位:片):</label>
-        <input type="number" inputmode='decimal' id="Nnightuse" class="form-control"/>
+        <label for="Nnightuse"></label><input type="number" inputmode='decimal' id="Nnightuse" class="form-control"/>
         <br/>
         <label>請輸入 夜用量多 剩餘數量 (單位:片):</label>
-        <input type="number" inputmode='decimal' id="Hnightuse" class="form-control"/>
+        <label for="Hnightuse"></label><input type="number" inputmode='decimal' id="Hnightuse" class="form-control"/>
         <br/>
         <label>請輸入安全存量 (預設為 10 片):</label>
-        <input type="number" inputmode='decimal' id="saveAmount" class="form-control"/>
+        <label for="saveAmount"></label><input type="number" inputmode='decimal' id="saveAmount" class="form-control"/>
         <br/>
         <button class="btn btn-success btn-block" id="sure" style="background-color: #F77885">確定</button>
     </div>
@@ -71,7 +71,7 @@
 
     $(document).ready(function () {
         initializeLiff('{{ liffid }}');  //接收傳遞的 liffid 參數
-        $('#sure').click(function (e) {  //按下確定鈕
+        $('#sure').click(function () {  //按下確定鈕
             pushMsg($('#Pad').val(), $('#Ldailyuse').val(), $('#Ndailyuse').val(), $('#Hdailyuse').val(),
                     $('#Nnightuse').val(), $('#Hnightuse').val(), $("#saveAmount").val());
         });
