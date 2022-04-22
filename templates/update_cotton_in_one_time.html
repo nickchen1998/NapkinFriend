@@ -41,7 +41,7 @@
         liff.init({liffId: myLiffId});
     }
 
-    function pushMsg(pname, pdatatime, pcycle, pPad, pLdailyuse, pNdailyuse, pHdailyuse, pNnightuse, pHnightuse, saveAmount) {
+    function pushMsg(pPad, pLdailyuse, pNdailyuse, pHdailyuse, pNnightuse, pHnightuse, saveAmount) {
         if (pPad === '' || pLdailyuse === '' || pNdailyuse === '' ||
             pHdailyuse === '' || pNnightuse === '' || pHnightuse === '') {  //資料檢查
             alert('每個項目都必須輸入！');
@@ -51,9 +51,6 @@
             saveAmount = 10
         }
         let msg = "批次更新";  //回傳訊息字串
-        msg = msg + pname + "/";
-        msg = msg + pdatatime + "/";
-        msg = msg + pcycle + "/";
         msg = msg + pPad + "/";
         msg = msg + pLdailyuse + "/";
         msg = msg + pNdailyuse + "/";
