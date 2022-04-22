@@ -42,14 +42,15 @@
     }
 
     function pushMsg(pname, pdatatime, pcycle, pPad, pLdailyuse, pNdailyuse, pHdailyuse, pNnightuse, pHnightuse, saveAmount) {
-        if (pPad == '' || pLdailyuse == '' || pNdailyuse == '' || pHdailyuse == '' || pNnightuse == '' || pHnightuse == '') {  //資料檢查
+        if (pPad === '' || pLdailyuse === '' || pNdailyuse === '' ||
+            pHdailyuse === '' || pNnightuse === '' || pHnightuse === '') {  //資料檢查
             alert('每個項目都必須輸入！');
             return;
         }
-        if (saveAmount == "" || saveAmount == 0) {
+        if (saveAmount === "" || saveAmount === 0) {
             saveAmount = 10
         }
-        var msg = "批次更新";  //回傳訊息字串
+        let msg = "批次更新";  //回傳訊息字串
         msg = msg + pname + "/";
         msg = msg + pdatatime + "/";
         msg = msg + pcycle + "/";
