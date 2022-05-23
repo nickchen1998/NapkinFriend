@@ -136,7 +136,7 @@ def handle_message(event):
         )
         line_bot_api.reply_message(event.reply_token, messages)
 
-    elif order == '線上簡易門診':
+    elif order == '草泥馬醫生':
         url_list = [
             'https://images.pexels.com/photos/7775232/'
             'pexels-photo-7775232.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
@@ -449,7 +449,7 @@ def first_time_set(event, mtext, user_id):
 # 更多功能回傳表單
 def more_function(event):
     try:
-        options = ["首次設定", "刪除資料", "聯絡我們"]
+        options = ["首次設定", "草泥馬醫生", "刪除資料", "聯絡我們"]
 
         message = TemplateSendMessage(
             alt_text='更多功能',
